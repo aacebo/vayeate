@@ -1,10 +1,10 @@
 package broker
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"net"
-	"strings"
+	"vayeate/frame"
 	"vayeate/logger"
 )
 
@@ -44,21 +44,26 @@ func (self *Broker) Close() {
 
 func (self *Broker) onConnection(conn net.Conn) {
 	for {
-		data, err := bufio.NewReader(conn).ReadString('\n')
+		data, err := io.ReadAll(conn)
 
 		if err != nil {
 			log.Warn(err)
 			return
 		}
 
-		trimmed := strings.TrimSpace(string(data))
+		if len(data) < 4 {
+			log.Warn("invalid frame")
+			return
+		}
 
-		if trimmed == "STOP" {
+		f := frame.Decode(data)
+
+		if f.GetType() == "STOP" {
 			break
 		}
 
-		if trimmed == "PING" {
-			conn.Write([]byte("PONG"))
+		if f.GetType() == "PING" {
+			conn.Write(frame.New("PONG", nil).Encode())
 		}
 	}
 

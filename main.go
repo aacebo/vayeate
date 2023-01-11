@@ -13,7 +13,7 @@ func main() {
 	godotenv.Load()
 	log := logger.New("main")
 
-	db := database.NewClient()
+	db := database.New()
 	defer db.Close()
 
 	port, err := utils.GetPort()

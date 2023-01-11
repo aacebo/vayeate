@@ -11,7 +11,7 @@ import (
 var client *sql.DB
 var log = logger.New("database")
 
-func NewClient() *sql.DB {
+func New() *sql.DB {
 	if client != nil {
 		return client
 	}
