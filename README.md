@@ -1,6 +1,6 @@
 # vayeate
  
-a persistent geo queue
+a persistent queue
 
 | Feature          | Status |
 |------------------|--------|

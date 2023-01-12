@@ -1,31 +1,95 @@
 package frame
 
+import (
+	"bytes"
+	"errors"
+	"strconv"
+)
+
+type FrameType uint8
+
+const (
+	CLOSE FrameType = 0
+	PING  FrameType = 1
+	PONG  FrameType = 2
+	PUB   FrameType = 3
+	SUB   FrameType = 4
+)
+
+const delimiter = byte(':')
+
 type Frame struct {
-	Type []byte
-	Data []byte
+	Type    FrameType
+	Payload []byte
 }
 
-func New(t string, data []byte) *Frame {
-	self := Frame{[]byte(t), data}
+func New(t FrameType, payload []byte) *Frame {
+	self := Frame{t, payload}
 	return &self
 }
 
-func Decode(data []byte) *Frame {
-	self := Frame{data[0:4],data[4:]}
+func Ping() *Frame {
+	self := Frame{PING, []byte{}}
 	return &self
+}
+
+func Pong() *Frame {
+	self := Frame{PONG, []byte{}}
+	return &self
+}
+
+func Close() *Frame {
+	self := Frame{CLOSE, []byte{}}
+	return &self
+}
+
+func Decode(data []byte) (*Frame, error) {
+	slices := bytes.Split(data, []byte{delimiter})
+
+	if len(slices) != 3 {
+		return nil, errors.New("invalid format")
+	}
+
+	t, err := strconv.Atoi(string(slices[1]))
+
+	if err != nil {
+		return nil, err
+	}
+
+	self := Frame{FrameType(t), slices[2]}
+	return &self, nil
 }
 
 func (self *Frame) Encode() []byte {
+	len := []byte(strconv.Itoa(len(self.Payload)))
+	t := []byte(strconv.Itoa(int(self.Type)))
+
 	return append(
-		self.Type,
-		self.Data...
+		append(append(len, delimiter), append(t, delimiter)...),
+		self.Payload...,
 	)
 }
 
-func (self *Frame) GetType() string {
-	return string(self.Type)
+func (self *Frame) GetPayload() string {
+	return string(self.Payload)
 }
 
-func (self *Frame) GetData() string {
-	return string(self.Data)
+func (self *Frame) IsClose() bool {
+	return self.Type == CLOSE
+}
+
+func (self *Frame) IsPing() bool {
+	return self.Type == PING
+}
+
+func (self *Frame) IsPong() bool {
+	return self.Type == PONG
+}
+
+func (self *Frame) IsPublish() bool {
+	return self.Type == PUB
+}
+
+func (self *Frame) IsSubscribe() bool {
+	return self.Type == SUB
 }

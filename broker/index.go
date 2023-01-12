@@ -11,7 +11,7 @@ import (
 var log = logger.New("broker")
 
 type Broker struct {
-	port 	 int
+	port     int
 	listener net.Listener
 }
 
@@ -26,7 +26,7 @@ func New(port int) *Broker {
 	return &self
 }
 
-func (self *Broker) Listen(handler func()) {
+func (self *Broker) Listen(handler func(f *frame.Frame)) {
 	for {
 		conn, err := self.listener.Accept()
 
@@ -34,7 +34,7 @@ func (self *Broker) Listen(handler func()) {
 			log.Error(err)
 		}
 
-		go self.onConnection(conn)
+		go self.onConnection(conn, handler)
 	}
 }
 
@@ -42,7 +42,9 @@ func (self *Broker) Close() {
 	self.listener.Close()
 }
 
-func (self *Broker) onConnection(conn net.Conn) {
+func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
+	defer conn.Close()
+
 	for {
 		data, err := io.ReadAll(conn)
 
@@ -51,21 +53,28 @@ func (self *Broker) onConnection(conn net.Conn) {
 			return
 		}
 
+		if len(data) == 0 {
+			continue
+		}
+
 		if len(data) < 4 {
 			log.Warn("invalid frame")
 			return
 		}
 
-		f := frame.Decode(data)
+		f, err := frame.Decode(data)
 
-		if f.GetType() == "STOP" {
-			break
+		if err != nil {
+			log.Warn(err)
+			return
 		}
 
-		if f.GetType() == "PING" {
-			conn.Write(frame.New("PONG", nil).Encode())
+		if f.IsClose() {
+			break
+		} else if f.IsPing() {
+			conn.Write(frame.Pong().Encode())
+		} else {
+			handler(f)
 		}
 	}
-
-	conn.Close()
 }

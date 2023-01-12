@@ -14,6 +14,9 @@ clean_build: clean build
 run:
 	go run main.go
 
+format:
+	gofmt -w .
+
 compile:
 	GOOS=freebsd GOARCH=386 go build -o bin/main-freebsd-386 main.go
 	GOOS=linux GOARCH=386 go build -o bin/main-linux-386 main.go
