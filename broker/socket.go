@@ -76,10 +76,7 @@ func (self *Socket) Read() (*frame.Frame, error) {
 		return nil, err
 	}
 
-	if f.IsPing() {
-		self.pingTimer.Reset(timeout)
-	}
-
+	self.pingTimer.Reset(timeout)
 	return f, nil
 }
 
