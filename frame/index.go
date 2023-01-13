@@ -18,6 +18,8 @@ const (
 
 const Delimiter = byte(':')
 
+var InvalidFormatError = errors.New("invalid frame format")
+
 type Frame struct {
 	Type    FrameType
 	Payload []byte
@@ -47,7 +49,7 @@ func Decode(data []byte) (*Frame, error) {
 	slices := bytes.Split(data, []byte{Delimiter})
 
 	if len(slices) != 3 {
-		return nil, errors.New("invalid format")
+		return nil, InvalidFormatError
 	}
 
 	t, err := strconv.Atoi(string(slices[1]))

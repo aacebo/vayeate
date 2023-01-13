@@ -59,6 +59,10 @@ func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
 		if f == nil || err != nil {
 			if err != nil {
 				log.Warn(err)
+
+				if err == frame.InvalidFormatError {
+					return
+				}
 			}
 
 			continue
