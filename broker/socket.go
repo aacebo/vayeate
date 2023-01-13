@@ -2,34 +2,51 @@ package broker
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"vayeate/frame"
+	"vayeate/logger"
 
 	"github.com/google/uuid"
 )
 
-const delimiter = byte(':')
+const timeout = 60 * time.Second
 
 type Socket struct {
-	id     string
-	conn   net.Conn
-	reader *bufio.Reader
+	id         *string
+	closed     *bool
+	reader     *bufio.Reader
+	startedAt  *int64
+	pingTimer  *time.Timer
+	log		   *logger.Logger
+	conn       net.Conn
 }
 
 func NewSocket(conn net.Conn) *Socket {
 	id := uuid.NewString()
+	closed := false;
 	reader := bufio.NewReader(conn)
-	self := Socket{id, conn, reader}
+	now := time.Now().Unix()
+	log := logger.New(fmt.Sprintf("socket:%s", id))
+	self := Socket{&id, &closed, reader, &now, nil, log, conn}
+	self.pingTimer = time.AfterFunc(timeout, onTimeout(&self))
+	log.Debugln("connected")
 	return &self
 }
 
 func (self *Socket) GetID() string {
-	return self.id
+	return *self.id
+}
+
+func (self *Socket) GetClosed() bool {
+	return *self.closed
 }
 
 func (self *Socket) Close() {
+	*self.closed = true
 	self.conn.Close()
 }
 
@@ -37,7 +54,7 @@ func (self *Socket) Read() (*frame.Frame, error) {
 	data := []byte{}
 
 	for {
-		chunk, err := self.reader.ReadBytes(byte(':'))
+		chunk, err := self.reader.ReadBytes(frame.Delimiter)
 		data = append(data, chunk...)
 
 		if err == io.EOF {
@@ -59,10 +76,21 @@ func (self *Socket) Read() (*frame.Frame, error) {
 		return nil, err
 	}
 
+	if f.IsPing() {
+		self.pingTimer.Reset(timeout)
+	}
+
 	return f, nil
 }
 
 func (self *Socket) Write(f *frame.Frame) error {
 	_, err := self.conn.Write(f.Encode())
 	return err
+}
+
+func onTimeout(self *Socket) func() {
+	return func() {
+		self.Close()
+		self.log.Debugln("closed due to inactivity")
+	}
 }

@@ -16,7 +16,7 @@ const (
 	SUB   FrameType = 4
 )
 
-const delimiter = byte(':')
+const Delimiter = byte(':')
 
 type Frame struct {
 	Type    FrameType
@@ -44,7 +44,7 @@ func Close() *Frame {
 }
 
 func Decode(data []byte) (*Frame, error) {
-	slices := bytes.Split(data, []byte{delimiter})
+	slices := bytes.Split(data, []byte{Delimiter})
 
 	if len(slices) != 3 {
 		return nil, errors.New("invalid format")
@@ -65,7 +65,7 @@ func (self *Frame) Encode() []byte {
 	t := []byte(strconv.Itoa(int(self.Type)))
 
 	return append(
-		append(append(len, delimiter), append(t, delimiter)...),
+		append(append(len, Delimiter), append(t, Delimiter)...),
 		self.Payload...,
 	)
 }

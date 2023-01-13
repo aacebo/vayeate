@@ -49,6 +49,11 @@ func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
 	defer socket.Close()
 
 	for {
+		if socket.GetClosed() {
+			delete(self.sockets, socket.GetID())
+			return
+		}
+
 		f, err := socket.Read()
 
 		if f == nil || err != nil {
@@ -62,7 +67,12 @@ func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
 		if f.IsClose() {
 			return
 		} else if f.IsPing() {
-			socket.Write(frame.Pong())
+			err := socket.Write(frame.Pong())
+
+			if err != nil {
+				log.Warn(err)
+				return
+			}
 		} else {
 			handler(f)
 		}
