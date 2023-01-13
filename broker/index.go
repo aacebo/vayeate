@@ -2,7 +2,6 @@ package broker
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"vayeate/frame"
 	"vayeate/logger"
@@ -13,16 +12,18 @@ var log = logger.New("broker")
 type Broker struct {
 	port     int
 	listener net.Listener
+	sockets  map[string]*Socket
 }
 
 func New(port int) *Broker {
+	sockets := make(map[string]*Socket)
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
 	if err != nil {
 		log.Error(err)
 	}
 
-	self := Broker{port, listener}
+	self := Broker{port, listener, sockets}
 	return &self
 }
 
@@ -43,36 +44,25 @@ func (self *Broker) Close() {
 }
 
 func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
-	defer conn.Close()
+	socket := NewSocket(conn)
+	self.sockets[socket.GetID()] = socket
+	defer socket.Close()
 
 	for {
-		data, err := io.ReadAll(conn)
+		f, err := socket.Read()
 
-		if err != nil {
-			log.Warn(err)
-			return
-		}
+		if f == nil || err != nil {
+			if err != nil {
+				log.Warn(err)
+			}
 
-		if len(data) == 0 {
 			continue
 		}
 
-		if len(data) < 4 {
-			log.Warn("invalid frame")
-			return
-		}
-
-		f, err := frame.Decode(data)
-
-		if err != nil {
-			log.Warn(err)
-			return
-		}
-
 		if f.IsClose() {
-			break
+			return
 		} else if f.IsPing() {
-			conn.Write(frame.Pong().Encode())
+			socket.Write(frame.Pong())
 		} else {
 			handler(f)
 		}
