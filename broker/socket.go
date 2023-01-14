@@ -16,18 +16,18 @@ import (
 const timeout = 60 * time.Second
 
 type Socket struct {
-	id         *string
-	closed     *bool
-	reader     *bufio.Reader
-	startedAt  *int64
-	pingTimer  *time.Timer
-	log		   *logger.Logger
-	conn       net.Conn
+	id        *string
+	closed    *bool
+	reader    *bufio.Reader
+	startedAt *int64
+	pingTimer *time.Timer
+	log       *logger.Logger
+	conn      net.Conn
 }
 
 func NewSocket(conn net.Conn) *Socket {
 	id := uuid.NewString()
-	closed := false;
+	closed := false
 	reader := bufio.NewReader(conn)
 	now := time.Now().Unix()
 	log := logger.New(fmt.Sprintf("socket:%s", id))
@@ -48,6 +48,7 @@ func (self *Socket) GetClosed() bool {
 func (self *Socket) Close() {
 	*self.closed = true
 	self.conn.Close()
+	self.pingTimer.Stop()
 }
 
 func (self *Socket) Read() (*frame.Frame, error) {

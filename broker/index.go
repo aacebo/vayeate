@@ -5,6 +5,7 @@ import (
 	"net"
 	"vayeate/frame"
 	"vayeate/logger"
+	"vayeate/queue"
 )
 
 var log = logger.New("broker")
@@ -13,21 +14,23 @@ type Broker struct {
 	port     int
 	listener net.Listener
 	sockets  map[string]*Socket
+	queues   map[string]*queue.Queue
 }
 
 func New(port int) *Broker {
-	sockets := make(map[string]*Socket)
+	sockets := map[string]*Socket{}
+	queues := map[string]*queue.Queue{}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
 	if err != nil {
 		log.Error(err)
 	}
 
-	self := Broker{port, listener, sockets}
+	self := Broker{port, listener, sockets, queues}
 	return &self
 }
 
-func (self *Broker) Listen(handler func(f *frame.Frame)) {
+func (self *Broker) Listen() {
 	for {
 		conn, err := self.listener.Accept()
 
@@ -35,7 +38,7 @@ func (self *Broker) Listen(handler func(f *frame.Frame)) {
 			log.Error(err)
 		}
 
-		go self.onConnection(conn, handler)
+		go self.onConnection(conn)
 	}
 }
 
@@ -43,7 +46,7 @@ func (self *Broker) Close() {
 	self.listener.Close()
 }
 
-func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
+func (self *Broker) onConnection(conn net.Conn) {
 	socket := NewSocket(conn)
 	self.sockets[socket.GetID()] = socket
 	defer socket.Close()
@@ -71,14 +74,15 @@ func (self *Broker) onConnection(conn net.Conn, handler func(f *frame.Frame)) {
 		if f.IsClose() {
 			return
 		} else if f.IsPing() {
-			err := socket.Write(frame.Pong())
+			err := socket.Write(frame.NewPong())
 
 			if err != nil {
 				log.Warn(err)
 				return
 			}
-		} else {
-			handler(f)
+		} else if f.IsAssert() {
+			q := queue.New(f.GetBody())
+			self.queues[q.ID] = q
 		}
 	}
 }
