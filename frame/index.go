@@ -6,28 +6,40 @@ import (
 	"strconv"
 )
 
-type FrameType uint8
+type OpCode uint8
 
 const (
-	CLOSE  FrameType = 0
-	PING   FrameType = 1
-	PONG   FrameType = 2
-	PUB    FrameType = 3
-	SUB    FrameType = 4
-	ASSERT FrameType = 5
+	CLOSE  OpCode = 0 // <code>
+	PING   OpCode = 1 // <code>
+	PONG   OpCode = 2 // <code>
+	PUB    OpCode = 3 // <code:queue:body>
+	SUB    OpCode = 4 // <code:queue>
+	ASSERT OpCode = 5 // <code:body>
 )
 
-const Delimiter = byte(':')
+const (
+	START     = byte('<')
+	END       = byte('>')
+	DELIMITER = byte(':')
+)
 
 var InvalidFormatError = errors.New("invalid frame format")
+var OpCodeLength = map[OpCode]int{
+	CLOSE:  1,
+	PING:   1,
+	PONG:   1,
+	PUB:    3,
+	SUB:    2,
+	ASSERT: 2,
+}
 
 type Frame struct {
-	Type FrameType
+	Code OpCode
 	Body []byte
 }
 
-func New(t FrameType, body []byte) *Frame {
-	self := Frame{t, body}
+func New(code OpCode, body []byte) *Frame {
+	self := Frame{code, body}
 	return &self
 }
 
@@ -48,9 +60,9 @@ func NewClose() *Frame {
 
 func Decode(data []byte) (*Frame, error) {
 	body := []byte{}
-	slices := bytes.Split(data, []byte{Delimiter})
+	slices := bytes.Split(data, []byte{DELIMITER})
 
-	if len(slices) < 1 || len(slices) > 2 {
+	if len(slices) < 1 || len(slices) > 3 {
 		return nil, InvalidFormatError
 	}
 
@@ -64,17 +76,25 @@ func Decode(data []byte) (*Frame, error) {
 		body = slices[1]
 	}
 
-	self := Frame{FrameType(t), body}
+	code := OpCode(t)
+
+	if OpCodeLength[code] != len(slices) {
+		return nil, InvalidFormatError
+	}
+
+	self := Frame{code, body}
 	return &self, nil
 }
 
 func (self *Frame) Encode() []byte {
-	t := []byte(strconv.Itoa(int(self.Type)))
+	data := []byte{}
+	code := []byte(strconv.Itoa(int(self.Code)))
 
-	return append(
-		append(t, Delimiter),
-		self.Body...,
-	)
+	data = append(data, START)
+	data = append(data, code...)
+	data = append(data, END)
+
+	return data
 }
 
 func (self *Frame) GetBody() string {
@@ -82,25 +102,25 @@ func (self *Frame) GetBody() string {
 }
 
 func (self *Frame) IsClose() bool {
-	return self.Type == CLOSE
+	return self.Code == CLOSE
 }
 
 func (self *Frame) IsPing() bool {
-	return self.Type == PING
+	return self.Code == PING
 }
 
 func (self *Frame) IsPong() bool {
-	return self.Type == PONG
+	return self.Code == PONG
 }
 
 func (self *Frame) IsPublish() bool {
-	return self.Type == PUB
+	return self.Code == PUB
 }
 
 func (self *Frame) IsSubscribe() bool {
-	return self.Type == SUB
+	return self.Code == SUB
 }
 
 func (self *Frame) IsAssert() bool {
-	return self.Type == ASSERT
+	return self.Code == ASSERT
 }

@@ -12,7 +12,7 @@ type Queue struct {
 	Name     string
 	Messages []*Message
 
-	log      *logger.Logger
+	log *logger.Logger
 }
 
 func New(name string) *Queue {

@@ -55,8 +55,7 @@ func (self *Socket) Read() (*frame.Frame, error) {
 	data := []byte{}
 
 	for {
-		chunk, err := self.reader.ReadBytes(frame.Delimiter)
-		data = append(data, chunk...)
+		b, err := self.reader.ReadByte()
 
 		if err == io.EOF {
 			break
@@ -64,6 +63,28 @@ func (self *Socket) Read() (*frame.Frame, error) {
 
 		if err != nil {
 			return nil, err
+		}
+
+		if b != frame.START {
+			break
+		}
+
+		for {
+			b, err := self.reader.ReadByte()
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				return nil, err
+			}
+
+			if b == frame.END {
+				break
+			}
+
+			data = append(data, b)
 		}
 	}
 
