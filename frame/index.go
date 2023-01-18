@@ -1,88 +1,127 @@
 package frame
 
 import (
-	"bytes"
+	"bufio"
 	"errors"
+	"io"
 	"strconv"
 )
 
 type OpCode uint8
 
 const (
-	CLOSE  OpCode = 0 // <code>
-	PING   OpCode = 1 // <code>
-	PONG   OpCode = 2 // <code>
-	PUB    OpCode = 3 // <code:queue:body>
-	SUB    OpCode = 4 // <code:queue>
-	ASSERT OpCode = 5 // <code:body>
+	CLOSE 	OpCode = 0 // <code::>
+	PING 	OpCode = 1 // <code::>
+	PONG	OpCode = 2 // <code::>
+	PRODUCE OpCode = 3 // <code:subject:body>
+	CONSUME OpCode = 4 // <code:subject:>
+	ASSERT 	OpCode = 5 // <code:subject:>
 )
 
 const (
-	START     = byte('<')
-	END       = byte('>')
-	DELIMITER = byte(':')
+	START     = byte('<') // frame start byte
+	END       = byte('>') // frame end byte
+	DELIMITER = byte(':') // frame slice delimiter
 )
 
 var InvalidFormatError = errors.New("invalid frame format")
-var OpCodeLength = map[OpCode]int{
-	CLOSE:  1,
-	PING:   1,
-	PONG:   1,
-	PUB:    3,
-	SUB:    2,
-	ASSERT: 2,
-}
 
+// A Frame comprised of many packets, utilizing a custom Netstring format
+// ex. <code:subject:body>
+// https://cr.yp.to/proto/netstrings.txt
 type Frame struct {
-	Code OpCode
-	Body []byte
+	Code    OpCode
+	Subject []byte
+	Body    []byte
 }
 
-func New(code OpCode, body []byte) *Frame {
-	self := Frame{code, body}
+func New(code OpCode, subject []byte, body []byte) *Frame {
+	self := Frame{code, subject, body}
 	return &self
 }
 
 func NewPing() *Frame {
-	self := Frame{PING, []byte{}}
+	self := Frame{PING, []byte{}, []byte{}}
 	return &self
 }
 
 func NewPong() *Frame {
-	self := Frame{PONG, []byte{}}
+	self := Frame{PONG, []byte{}, []byte{}}
 	return &self
 }
 
 func NewClose() *Frame {
-	self := Frame{CLOSE, []byte{}}
+	self := Frame{CLOSE, []byte{}, []byte{}}
 	return &self
 }
 
-func Decode(data []byte) (*Frame, error) {
+func Decode(reader *bufio.Reader) (*Frame, error) {
+	subject := []byte{}
 	body := []byte{}
-	slices := bytes.Split(data, []byte{DELIMITER})
-
-	if len(slices) < 1 || len(slices) > 3 {
-		return nil, InvalidFormatError
-	}
-
-	t, err := strconv.Atoi(string(slices[0]))
+	b, err := reader.ReadByte()
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(slices) == 2 {
-		body = slices[1]
+	if b != START {
+		return nil, InvalidFormatError
+	}
+
+	// read opcode
+	b, err = reader.ReadByte()
+
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := strconv.Atoi(string(b))
+
+	if err != nil {
+		return nil, err
 	}
 
 	code := OpCode(t)
 
-	if OpCodeLength[code] != len(slices) {
-		return nil, InvalidFormatError
+	// read subject
+	for {
+		b, err := reader.ReadByte()
+
+		if err == io.EOF {
+			return nil, InvalidFormatError
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if b == DELIMITER {
+			break
+		}
+
+		subject = append(subject, b)
 	}
 
-	self := Frame{code, body}
+	// read body
+	for {
+		b, err := reader.ReadByte()
+
+		if err == io.EOF {
+			return nil, InvalidFormatError
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if b == END {
+			break
+		}
+
+		body = append(body, b)
+	}
+
+	self := Frame{code, subject, body}
 	return &self, nil
 }
 
@@ -92,9 +131,17 @@ func (self *Frame) Encode() []byte {
 
 	data = append(data, START)
 	data = append(data, code...)
+	data = append(data, DELIMITER)
+	data = append(data, self.Subject...)
+	data = append(data, DELIMITER)
+	data = append(data, self.Body...)
 	data = append(data, END)
 
 	return data
+}
+
+func (self *Frame) GetSubject() string {
+	return string(self.Subject)
 }
 
 func (self *Frame) GetBody() string {
@@ -113,12 +160,12 @@ func (self *Frame) IsPong() bool {
 	return self.Code == PONG
 }
 
-func (self *Frame) IsPublish() bool {
-	return self.Code == PUB
+func (self *Frame) IsProduce() bool {
+	return self.Code == PRODUCE
 }
 
-func (self *Frame) IsSubscribe() bool {
-	return self.Code == SUB
+func (self *Frame) IsConsume() bool {
+	return self.Code == CONSUME
 }
 
 func (self *Frame) IsAssert() bool {

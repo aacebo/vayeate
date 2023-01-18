@@ -3,6 +3,7 @@ package broker
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"vayeate/frame"
 	"vayeate/logger"
 	"vayeate/queue"
@@ -46,14 +47,28 @@ func (self *Broker) Close() {
 	self.listener.Close()
 }
 
+func (self *Broker) GetQueues(pattern string) []*queue.Queue {
+	queues := []*queue.Queue{}
+
+	for key, q := range self.queues {
+		match, _ := regexp.MatchString(pattern, key)
+
+		if match == true {
+			queues = append(queues, q)
+		}
+	}
+
+	return queues
+}
+
 func (self *Broker) onConnection(conn net.Conn) {
 	socket := NewSocket(conn)
-	self.sockets[socket.GetID()] = socket
+	self.sockets[socket.ID] = socket
 	defer socket.Close()
 
 	for {
-		if socket.GetClosed() {
-			delete(self.sockets, socket.GetID())
+		if socket.Closed == true {
+			delete(self.sockets, socket.ID)
 			return
 		}
 
@@ -81,8 +96,20 @@ func (self *Broker) onConnection(conn net.Conn) {
 				return
 			}
 		} else if f.IsAssert() {
-			q := queue.New(f.GetBody())
-			self.queues[q.ID] = q
+			q := queue.New(f.GetSubject())
+			self.queues[q.Name] = q
+		} else if f.IsProduce() {
+			queues := self.GetQueues(f.GetSubject())
+
+			for _, q := range queues {
+				q.Push(f.Body)
+			}
+		} else if f.IsConsume() {
+			queues := self.GetQueues(f.GetSubject())
+
+			for _, q := range queues {
+				q.Consume(socket.ID)
+			}
 		}
 	}
 }

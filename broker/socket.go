@@ -13,15 +13,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// timeout connections after 60s of inactivity
 const timeout = 60 * time.Second
 
 type Socket struct {
-	id        *string
-	closed    *bool
-	reader    *bufio.Reader
-	startedAt *int64
+	ID        string
+	Closed    bool
+	StartedAt int64
+
 	pingTimer *time.Timer
 	log       *logger.Logger
+	reader    *bufio.Reader
 	conn      net.Conn
 }
 
@@ -31,68 +33,26 @@ func NewSocket(conn net.Conn) *Socket {
 	reader := bufio.NewReader(conn)
 	now := time.Now().Unix()
 	log := logger.New(fmt.Sprintf("socket:%s", id))
-	self := Socket{&id, &closed, reader, &now, nil, log, conn}
+	self := Socket{id, closed, now, nil, log, reader, conn}
 	self.pingTimer = time.AfterFunc(timeout, onTimeout(&self))
+
 	log.Debugln("connected")
+
 	return &self
 }
 
-func (self *Socket) GetID() string {
-	return *self.id
-}
-
-func (self *Socket) GetClosed() bool {
-	return *self.closed
-}
-
 func (self *Socket) Close() {
-	*self.closed = true
+	self.Closed = true
 	self.conn.Close()
 	self.pingTimer.Stop()
 }
 
 func (self *Socket) Read() (*frame.Frame, error) {
-	data := []byte{}
+	f, err := frame.Decode(self.reader)
 
-	for {
-		b, err := self.reader.ReadByte()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		if b != frame.START {
-			break
-		}
-
-		for {
-			b, err := self.reader.ReadByte()
-
-			if err == io.EOF {
-				break
-			}
-
-			if err != nil {
-				return nil, err
-			}
-
-			if b == frame.END {
-				break
-			}
-
-			data = append(data, b)
-		}
-	}
-
-	if len(data) == 0 {
+	if err == io.EOF {
 		return nil, nil
 	}
-
-	f, err := frame.Decode(data)
 
 	if err != nil {
 		return nil, err
