@@ -1,8 +1,8 @@
 package main
 
 import (
-	"vayeate/broker"
 	"vayeate/logger"
+	"vayeate/server"
 	"vayeate/utils"
 )
 
@@ -14,7 +14,7 @@ func main() {
 		log.Error(err)
 	}
 
-	b, err := broker.New(port)
+	s, err := server.New(port)
 
 	if err != nil {
 		log.Error(err)
@@ -22,12 +22,12 @@ func main() {
 	}
 
 	log.Infof("listening on port %d", port)
-	err = b.Listen()
+	err = s.Listen()
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	defer b.Close()
+	defer s.Close()
 }

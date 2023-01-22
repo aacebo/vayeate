@@ -1,4 +1,4 @@
-package broker
+package server
 
 import (
 	"fmt"
@@ -10,16 +10,16 @@ import (
 	"vayeate/queue"
 )
 
-var log = logger.New("broker")
+var log = logger.New("server")
 
-type Broker struct {
+type Server struct {
 	port     int
 	listener net.Listener
 	sockets  map[string]*Socket
 	queues   map[string]*queue.Queue
 }
 
-func New(port int) (*Broker, error) {
+func New(port int) (*Server, error) {
 	sockets := map[string]*Socket{}
 	queues := map[string]*queue.Queue{}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -28,11 +28,11 @@ func New(port int) (*Broker, error) {
 		return nil, err
 	}
 
-	self := Broker{port, listener, sockets, queues}
+	self := Server{port, listener, sockets, queues}
 	return &self, nil
 }
 
-func (self *Broker) Listen() error {
+func (self *Server) Listen() error {
 	for {
 		conn, err := self.listener.Accept()
 
@@ -44,11 +44,11 @@ func (self *Broker) Listen() error {
 	}
 }
 
-func (self *Broker) Close() {
+func (self *Server) Close() {
 	self.listener.Close()
 }
 
-func (self *Broker) GetQueues(pattern string) []*queue.Queue {
+func (self *Server) GetQueues(pattern string) []*queue.Queue {
 	queues := []*queue.Queue{}
 
 	for key, q := range self.queues {
@@ -62,7 +62,7 @@ func (self *Broker) GetQueues(pattern string) []*queue.Queue {
 	return queues
 }
 
-func (self *Broker) onConnection(conn net.Conn) {
+func (self *Server) onConnection(conn net.Conn) {
 	socket := NewSocket(conn)
 	self.sockets[socket.ID] = socket
 	defer socket.Close()
