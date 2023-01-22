@@ -14,9 +14,20 @@ func main() {
 		log.Error(err)
 	}
 
-	b := broker.New(port)
+	b, err := broker.New(port)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	log.Infof("listening on port %d", port)
-	b.Listen()
+	err = b.Listen()
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	defer b.Close()
 }

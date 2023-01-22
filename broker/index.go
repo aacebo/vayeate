@@ -19,25 +19,25 @@ type Broker struct {
 	queues   map[string]*queue.Queue
 }
 
-func New(port int) *Broker {
+func New(port int) (*Broker, error) {
 	sockets := map[string]*Socket{}
 	queues := map[string]*queue.Queue{}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
 	self := Broker{port, listener, sockets, queues}
-	return &self
+	return &self, nil
 }
 
-func (self *Broker) Listen() {
+func (self *Broker) Listen() error {
 	for {
 		conn, err := self.listener.Accept()
 
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 
 		go self.onConnection(conn)
