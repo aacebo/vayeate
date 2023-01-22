@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+
 	"vayeate/frame"
 	"vayeate/logger"
 	"vayeate/queue"
@@ -98,6 +99,7 @@ func (self *Broker) onConnection(conn net.Conn) {
 		} else if f.IsAssert() {
 			q := queue.New(f.GetSubject())
 			self.queues[q.Name] = q
+			log.Infoln(len(self.queues))
 		} else if f.IsProduce() {
 			queues := self.GetQueues(f.GetSubject())
 

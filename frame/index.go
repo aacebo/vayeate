@@ -10,12 +10,13 @@ import (
 type OpCode uint8
 
 const (
-	CLOSE 	OpCode = 0 // <code::>
-	PING 	OpCode = 1 // <code::>
-	PONG	OpCode = 2 // <code::>
-	PRODUCE OpCode = 3 // <code:subject:body>
-	CONSUME OpCode = 4 // <code:subject:>
-	ASSERT 	OpCode = 5 // <code:subject:>
+	CLOSE   OpCode = 0 // <code::>
+	PING    OpCode = 1 // <code::>
+	PONG    OpCode = 2 // <code::>
+	ASSERT  OpCode = 3 // <code:subject:>
+	PRODUCE OpCode = 4 // <code:subject:body>
+	CONSUME OpCode = 5 // <code:subject:>
+	ACK     OpCode = 6 // <code:subject:>
 )
 
 const (
@@ -40,6 +41,11 @@ func New(code OpCode, subject []byte, body []byte) *Frame {
 	return &self
 }
 
+func NewClose() *Frame {
+	self := Frame{CLOSE, []byte{}, []byte{}}
+	return &self
+}
+
 func NewPing() *Frame {
 	self := Frame{PING, []byte{}, []byte{}}
 	return &self
@@ -50,8 +56,23 @@ func NewPong() *Frame {
 	return &self
 }
 
-func NewClose() *Frame {
-	self := Frame{CLOSE, []byte{}, []byte{}}
+func NewAssert(subject []byte) *Frame {
+	self := Frame{ASSERT, subject, []byte{}}
+	return &self
+}
+
+func NewProduce(subject []byte, body []byte) *Frame {
+	self := Frame{PRODUCE, subject, body}
+	return &self
+}
+
+func NewConsume(subject []byte) *Frame {
+	self := Frame{CONSUME, subject, []byte{}}
+	return &self
+}
+
+func NewAck(subject []byte) *Frame {
+	self := Frame{ACK, subject, []byte{}}
 	return &self
 }
 
@@ -160,6 +181,10 @@ func (self *Frame) IsPong() bool {
 	return self.Code == PONG
 }
 
+func (self *Frame) IsAssert() bool {
+	return self.Code == ASSERT
+}
+
 func (self *Frame) IsProduce() bool {
 	return self.Code == PRODUCE
 }
@@ -168,6 +193,6 @@ func (self *Frame) IsConsume() bool {
 	return self.Code == CONSUME
 }
 
-func (self *Frame) IsAssert() bool {
-	return self.Code == ASSERT
+func (self *Frame) IsAck() bool {
+	return self.Code == ACK
 }
