@@ -10,3 +10,8 @@ a concurrent persistent distributed queue
 | Wildcards        |  [ ]   |
 | Admin Portal     |  [ ]   |
 | Logs             |  [ ]   |
+
+## To Do
+
+- use `sync.Mutex` to manage concurrently shared data
+- implement `Consumers`

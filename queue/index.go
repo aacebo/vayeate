@@ -12,8 +12,8 @@ type Queue struct {
 	ID   string
 	Name string
 
-	messages []*Message
-	log      *logger.Logger
+	log  *logger.Logger
+	push chan []byte
 }
 
 func New(name string) *Queue {
@@ -23,19 +23,34 @@ func New(name string) *Queue {
 	return &Queue{
 		id,
 		name,
-		[]*Message{},
 		log,
+		make(chan []byte),
 	}
 }
 
-func (self *Queue) Push(payload []byte) *Message {
-	message := NewMessage(payload)
-	self.messages = append(self.messages, message)
-	return message
+func (self *Queue) Push(payload []byte) {
+	self.push <- payload
 }
 
-func (self *Queue) Pop() *Message {
-	message := self.messages[0]
-	self.messages = self.messages[1:]
-	return message
+func (self *Queue) Pop(id string) {
+
 }
+
+func (self *Queue) Start() {
+	for {
+		payload := <-self.push
+		self.log.Infof("received message %s", string(payload))
+	}
+}
+
+// func (self *Queue) Push(payload []byte) *Message {
+// 	message := NewMessage(payload)
+// 	self.messages = append(self.messages, message)
+// 	return message
+// }
+
+// func (self *Queue) Pop() *Message {
+// 	message := self.messages[0]
+// 	self.messages = self.messages[1:]
+// 	return message
+// }

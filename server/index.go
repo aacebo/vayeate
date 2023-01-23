@@ -5,6 +5,7 @@ import (
 	"net"
 	"regexp"
 
+	"vayeate/common"
 	"vayeate/frame"
 	"vayeate/logger"
 	"vayeate/queue"
@@ -18,14 +19,14 @@ type Server struct {
 
 	log      *logger.Logger
 	listener net.Listener
-	sockets  map[string]*Socket
-	queues   map[string]*queue.Queue
+	sockets  *common.SyncMap[string, *Socket]
+	queues   *common.SyncMap[string, *queue.Queue]
 }
 
 func New(port int) (*Server, error) {
 	id := uuid.NewString()
-	sockets := map[string]*Socket{}
-	queues := map[string]*queue.Queue{}
+	sockets := common.NewSyncMap[string, *Socket]()
+	queues := common.NewSyncMap[string, *queue.Queue]()
 	log := logger.New(fmt.Sprintf("server:%s", id))
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
@@ -64,29 +65,30 @@ func (self *Server) Close() {
 }
 
 func (self *Server) GetQueue(name string) *queue.Queue {
-	return self.queues[name]
+	return self.queues.Get(name)
 }
 
 func (self *Server) GetQueues(pattern string) []*queue.Queue {
 	queues := []*queue.Queue{}
 
-	for key, q := range self.queues {
-		match, _ := regexp.MatchString(pattern, key)
+	self.queues.Iterate(func(k string, q *queue.Queue) {
+		match, _ := regexp.MatchString(pattern, k)
 
 		if match == true {
 			queues = append(queues, q)
 		}
-	}
+	})
 
 	return queues
 }
 
 func (self *Server) AddQueue(q *queue.Queue) *queue.Queue {
-	if self.queues[q.Name] != nil {
-		return self.queues[q.Name]
+	if self.queues.Get(q.Name) != nil {
+		return self.queues.Get(q.Name)
 	}
 
-	self.queues[q.Name] = q
+	self.queues.Set(q.Name, q)
+	go q.Start()
 	return q
 }
 
@@ -97,7 +99,7 @@ func (self *Server) onConnection(
 	onError func(err error),
 ) {
 	s := NewSocket(conn)
-	self.sockets[s.ID] = s
+	self.sockets.Set(s.ID, s)
 
 	if onConnect != nil {
 		onConnect(s)
@@ -105,7 +107,7 @@ func (self *Server) onConnection(
 
 	defer func() {
 		s.Close()
-		delete(self.sockets, s.ID)
+		self.sockets.Del(s.ID)
 	}()
 
 	for {

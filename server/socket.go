@@ -21,8 +21,8 @@ type Socket struct {
 	Closed    bool
 	StartedAt int64
 
-	pingTimer *time.Timer
 	log       *logger.Logger
+	pingTimer *time.Timer
 	reader    *bufio.Reader
 	conn      net.Conn
 }
@@ -33,7 +33,7 @@ func NewSocket(conn net.Conn) *Socket {
 	reader := bufio.NewReader(conn)
 	now := time.Now().Unix()
 	log := logger.New(fmt.Sprintf("socket:%s", id))
-	self := Socket{id, closed, now, nil, log, reader, conn}
+	self := Socket{id, closed, now, log, nil, reader, conn}
 	self.pingTimer = time.AfterFunc(timeout, onTimeout(&self))
 
 	return &self
