@@ -45,6 +45,10 @@ func (self *Socket) Close() {
 	self.pingTimer.Stop()
 }
 
+func (self *Socket) GetRemoteAddress() string {
+	return self.conn.RemoteAddr().String()
+}
+
 func (self *Socket) Read() (*frame.Frame, error) {
 	f, err := frame.Decode(self.reader)
 

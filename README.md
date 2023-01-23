@@ -8,3 +8,4 @@ a persistent distributed queue
 | Persistence      |        |
 | Wildcards        |        |
 | Admin Portal     |        |
+| Logs             |        |

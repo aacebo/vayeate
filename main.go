@@ -1,17 +1,17 @@
 package main
 
 import (
+	"vayeate/env"
 	"vayeate/frame"
 	"vayeate/logger"
 	"vayeate/queue"
 	"vayeate/server"
-	"vayeate/utils"
 )
 
 var log = logger.New("main")
 
 func main() {
-	port, err := utils.GetPort()
+	port, err := env.GetPort()
 
 	if err != nil {
 		log.Error(err)
@@ -27,7 +27,7 @@ func main() {
 	log.Infof("listening on port %d", port)
 
 	var onConnect = func(s *server.Socket) {
-		log.Info(s)
+		log.Infof("new socket <%s>", s.GetRemoteAddress())
 	}
 
 	var onFrame = func(s *server.Socket, f *frame.Frame) {
@@ -48,13 +48,13 @@ func main() {
 	defer serv.Close()
 }
 
-func onAssert(server *server.Server, s *server.Socket, f *frame.Frame) {
-	q := server.AddQueue(queue.New(f.GetSubject()))
+func onAssert(serv *server.Server, s *server.Socket, f *frame.Frame) {
+	q := serv.AddQueue(queue.New(f.GetSubject()))
 	log.Info(q.ID)
 }
 
-func onProduce(server *server.Server, s *server.Socket, f *frame.Frame) {
-	qs := server.GetQueues(f.GetSubject())
+func onProduce(serv *server.Server, s *server.Socket, f *frame.Frame) {
+	qs := serv.GetQueues(f.GetSubject())
 
 	for _, q := range qs {
 		q.Push(f.Body)
