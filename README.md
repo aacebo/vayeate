@@ -4,9 +4,9 @@ a concurrent persistent distributed queue
 
 | Feature          | Status |
 |------------------|--------|
-| Concurrency      |        |
-| Meshing		   |        |
-| Persistence      |        |
-| Wildcards        |        |
-| Admin Portal     |        |
-| Logs             |        |
+| Concurrency      |  [ ]   |
+| Meshing		   |  [ ]   |
+| Persistence      |  [ ]   |
+| Wildcards        |  [ ]   |
+| Admin Portal     |  [ ]   |
+| Logs             |  [ ]   |
