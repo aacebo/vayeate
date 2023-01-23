@@ -54,7 +54,7 @@ func main() {
 
 func onAssert(serv *server.Server, s *server.Socket, f *frame.Frame) {
 	q := serv.AddQueue(queue.New(f.GetSubject()))
-	log.Info(q.ID)
+	log.Infof("assert %s", q.Name)
 }
 
 func onProduce(serv *server.Server, s *server.Socket, f *frame.Frame) {
@@ -62,5 +62,6 @@ func onProduce(serv *server.Server, s *server.Socket, f *frame.Frame) {
 
 	for _, q := range qs {
 		q.Push(f.Body)
+		log.Infof("produce %s => %s", q.Name, f.GetBody())
 	}
 }

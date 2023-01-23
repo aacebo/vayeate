@@ -96,6 +96,16 @@ func Decode(reader *bufio.Reader) (*Frame, error) {
 
 	code := OpCode(t)
 
+	b, err = reader.ReadByte()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if b != DELIMITER {
+		return nil, InvalidFormatError
+	}
+
 	// read subject
 	for {
 		b, err := reader.ReadByte()
