@@ -2,7 +2,6 @@ package queue
 
 import (
 	"fmt"
-	"time"
 
 	"vayeate/logger"
 
@@ -10,12 +9,11 @@ import (
 )
 
 type Queue struct {
-	ID       string
-	Name     string
-	Messages []*Message
+	ID   string
+	Name string
 
+	messages  []*Message
 	log       *logger.Logger
-	consumers map[string]int64
 }
 
 func New(name string) *Queue {
@@ -27,22 +25,17 @@ func New(name string) *Queue {
 		name,
 		[]*Message{},
 		log,
-		map[string]int64{},
 	}
 }
 
 func (self *Queue) Push(payload []byte) *Message {
 	message := NewMessage(payload)
-	self.Messages = append(self.Messages, message)
+	self.messages = append(self.messages, message)
 	return message
 }
 
 func (self *Queue) Pop() *Message {
-	message := self.Messages[0]
-	self.Messages = self.Messages[1:]
+	message := self.messages[0]
+	self.messages = self.messages[1:]
 	return message
-}
-
-func (self *Queue) Consume(id string) {
-	self.consumers[id] = time.Now().Unix()
 }

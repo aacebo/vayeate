@@ -42,7 +42,7 @@ func New(port int) (*Server, error) {
 	}, nil
 }
 
-func (self *Server) Listen() error {
+func (self *Server) Listen(onConnect func(s *Socket), onFrame func(s *Socket, f *frame.Frame)) error {
 	for {
 		conn, err := self.listener.Accept()
 
@@ -50,12 +50,16 @@ func (self *Server) Listen() error {
 			return err
 		}
 
-		go self.onConnection(conn)
+		go self.onConnection(conn, onConnect, onFrame)
 	}
 }
 
 func (self *Server) Close() {
 	self.listener.Close()
+}
+
+func (self *Server) GetQueue(name string) *queue.Queue {
+	return self.queues[name]
 }
 
 func (self *Server) GetQueues(pattern string) []*queue.Queue {
@@ -72,18 +76,34 @@ func (self *Server) GetQueues(pattern string) []*queue.Queue {
 	return queues
 }
 
-func (self *Server) onConnection(conn net.Conn) {
-	socket := NewSocket(conn)
-	self.sockets[socket.ID] = socket
-	defer socket.Close()
+func (self *Server) AddQueue(q *queue.Queue) *queue.Queue {
+	if self.queues[q.Name] != nil {
+		return self.queues[q.Name]
+	}
+
+	self.queues[q.Name] = q
+	return q
+}
+
+func (self *Server) onConnection(conn net.Conn, onConnect func(s *Socket), onFrame func(s *Socket, f *frame.Frame)) {
+	s := NewSocket(conn)
+	self.sockets[s.ID] = s
+
+	if onConnect != nil {
+		onConnect(s)
+	}
+
+	defer func() {
+		s.Close()
+		delete(self.sockets, s.ID)
+	}()
 
 	for {
-		if socket.Closed == true {
-			delete(self.sockets, socket.ID)
+		if s.Closed == true {
 			return
 		}
 
-		f, err := socket.Read()
+		f, err := s.Read()
 
 		if f == nil || err != nil {
 			if err != nil {
@@ -100,28 +120,18 @@ func (self *Server) onConnection(conn net.Conn) {
 		if f.IsClose() {
 			return
 		} else if f.IsPing() {
-			err := socket.Write(frame.NewPong())
-
-			if err != nil {
-				log.Warn(err)
-				return
-			}
-		} else if f.IsAssert() {
-			q := queue.New(f.GetSubject())
-			self.queues[q.Name] = q
-			log.Infoln(len(self.queues))
-		} else if f.IsProduce() {
-			queues := self.GetQueues(f.GetSubject())
-
-			for _, q := range queues {
-				q.Push(f.Body)
-			}
-		} else if f.IsConsume() {
-			queues := self.GetQueues(f.GetSubject())
-
-			for _, q := range queues {
-				q.Consume(socket.ID)
-			}
+			self.onPing(s)
+		} else if onFrame != nil {
+			onFrame(s, f)
 		}
+	}
+}
+
+func (self *Server) onPing(s *Socket) {
+	err := s.Write(frame.NewPong())
+
+	if err != nil {
+		log.Warn(err)
+		return
 	}
 }
