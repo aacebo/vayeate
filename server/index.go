@@ -42,7 +42,11 @@ func New(port int) (*Server, error) {
 	}, nil
 }
 
-func (self *Server) Listen(onConnect func(s *Socket), onFrame func(s *Socket, f *frame.Frame)) error {
+func (self *Server) Listen(
+	onConnect func(s *Socket),
+	onFrame func(s *Socket, f *frame.Frame),
+	onError func(err error),
+) error {
 	for {
 		conn, err := self.listener.Accept()
 
@@ -50,7 +54,7 @@ func (self *Server) Listen(onConnect func(s *Socket), onFrame func(s *Socket, f 
 			return err
 		}
 
-		go self.onConnection(conn, onConnect, onFrame)
+		go self.onConnection(conn, onConnect, onFrame, onError)
 	}
 }
 
@@ -85,7 +89,12 @@ func (self *Server) AddQueue(q *queue.Queue) *queue.Queue {
 	return q
 }
 
-func (self *Server) onConnection(conn net.Conn, onConnect func(s *Socket), onFrame func(s *Socket, f *frame.Frame)) {
+func (self *Server) onConnection(
+	conn net.Conn,
+	onConnect func(s *Socket),
+	onFrame func(s *Socket,f *frame.Frame),
+	onError func (err error),
+) {
 	s := NewSocket(conn)
 	self.sockets[s.ID] = s
 
@@ -107,7 +116,9 @@ func (self *Server) onConnection(conn net.Conn, onConnect func(s *Socket), onFra
 
 		if f == nil || err != nil {
 			if err != nil {
-				log.Warn(err)
+				if onError != nil {
+					onError(err)
+				}
 
 				if err == frame.InvalidFormatError {
 					return

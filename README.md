@@ -1,9 +1,10 @@
 # vayeate
  
-a persistent distributed queue
+a concurrent persistent distributed queue
 
 | Feature          | Status |
 |------------------|--------|
+| Concurrency      |        |
 | Meshing		   |        |
 | Persistence      |        |
 | Wildcards        |        |
