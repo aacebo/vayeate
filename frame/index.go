@@ -10,13 +10,14 @@ import (
 type OpCode uint8
 
 const (
-	CLOSE   OpCode = 0 // <code::>
-	PING    OpCode = 1 // <code::>
-	PONG    OpCode = 2 // <code::>
-	ASSERT  OpCode = 3 // <code:subject:>
-	PRODUCE OpCode = 4 // <code:subject:body>
-	CONSUME OpCode = 5 // <code:subject:>
-	ACK     OpCode = 6 // <code:subject:>
+	CLOSE    OpCode = 0 // <code::>
+	PING     OpCode = 1 // <code::>
+	PONG     OpCode = 2 // <code::>
+	ASSERT   OpCode = 3 // <code:subject:>
+	PRODUCE  OpCode = 4 // <code:subject:body>
+	CONSUME  OpCode = 5 // <code:subject:>
+	ACK      OpCode = 6 // <code:subject:>
+	DELEGATE OpCode = 7 // <code:subject:body>
 )
 
 const (
@@ -66,6 +67,10 @@ func NewConsume(subject []byte) *Frame {
 
 func NewAck(subject []byte) *Frame {
 	return &Frame{ACK, subject, []byte{}}
+}
+
+func NewDelegate(subject []byte, body []byte) *Frame {
+	return &Frame{DELEGATE, subject, body}
 }
 
 func Decode(reader *bufio.Reader) (*Frame, error) {
@@ -196,4 +201,8 @@ func (self *Frame) IsConsume() bool {
 
 func (self *Frame) IsAck() bool {
 	return self.Code == ACK
+}
+
+func (self *Frame) IsDelegate() bool {
+	return self.Code == DELEGATE
 }

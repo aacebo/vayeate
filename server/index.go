@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net"
-	"regexp"
 
 	"vayeate/common"
 	"vayeate/frame"
@@ -19,14 +18,14 @@ type Server struct {
 
 	log      *logger.Logger
 	listener net.Listener
-	sockets  *common.SyncMap[string, *Socket]
-	queues   *common.SyncMap[string, *queue.Queue]
+	sockets  *common.SyncMap[*Socket]
+	queues   *common.SyncMap[*queue.Queue]
 }
 
 func New(port int) (*Server, error) {
 	id := uuid.NewString()
-	sockets := common.NewSyncMap[string, *Socket]()
-	queues := common.NewSyncMap[string, *queue.Queue]()
+	sockets := common.NewSyncMap[*Socket]()
+	queues := common.NewSyncMap[*queue.Queue]()
 	log := logger.New(fmt.Sprintf("server:%s", id))
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
@@ -69,26 +68,18 @@ func (self *Server) GetQueue(name string) *queue.Queue {
 }
 
 func (self *Server) GetQueues(pattern string) []*queue.Queue {
-	queues := []*queue.Queue{}
-
-	self.queues.Iterate(func(k string, q *queue.Queue) {
-		match, _ := regexp.MatchString(pattern, k)
-
-		if match == true {
-			queues = append(queues, q)
-		}
-	})
-
-	return queues
+	return self.queues.GetMatching(pattern)
 }
 
 func (self *Server) AddQueue(q *queue.Queue) *queue.Queue {
-	if self.queues.Get(q.Name) != nil {
-		return self.queues.Get(q.Name)
+	existing := self.queues.Get(q.Name)
+
+	if existing != nil {
+		return existing
 	}
 
 	self.queues.Set(q.Name, q)
-	go q.Start()
+	go q.Start(self.onConsume(q))
 	return q
 }
 
@@ -149,5 +140,18 @@ func (self *Server) onPing(s *Socket) {
 	if err != nil {
 		self.log.Warn(err)
 		return
+	}
+}
+
+func (self *Server) onConsume(q *queue.Queue) func(id string, payload []byte) {
+	return func(id string, payload []byte) {
+		s := self.sockets.Get(id)
+
+		if s == nil {
+			return
+		}
+
+		f := frame.NewDelegate([]byte(q.Name), payload)
+		s.Write(f)
 	}
 }

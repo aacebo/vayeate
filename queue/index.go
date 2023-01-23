@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 
+	"vayeate/common"
 	"vayeate/logger"
 
 	"github.com/google/uuid"
@@ -12,34 +13,38 @@ type Queue struct {
 	ID   string
 	Name string
 
-	log  *logger.Logger
-	push chan []byte
+	log       *logger.Logger
+	consumers *common.SyncSet[string]
+	buffer    chan []byte
 }
 
 func New(name string) *Queue {
 	id := uuid.NewString()
 	log := logger.New(fmt.Sprintf("queue:%s", id))
+	consumers := common.NewSyncSet[string]()
 
 	return &Queue{
 		id,
 		name,
 		log,
+		consumers,
 		make(chan []byte),
 	}
 }
 
 func (self *Queue) Push(payload []byte) {
-	self.push <- payload
+	self.buffer <- payload
 }
 
-func (self *Queue) Pop(id string) {
-
+func (self *Queue) Consume(id string) {
+	self.consumers.Add(id)
 }
 
-func (self *Queue) Start() {
+func (self *Queue) Start(onConsume func(id string, payload []byte)) {
 	for {
-		payload := <-self.push
-		self.log.Infof("received message %s", string(payload))
+		payload := <-self.buffer
+		consumerId := self.consumers.CyclicNext()
+		onConsume(consumerId, payload)
 	}
 }
 

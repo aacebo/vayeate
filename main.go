@@ -35,6 +35,8 @@ func main() {
 			onAssert(serv, s, f)
 		} else if f.IsProduce() {
 			onProduce(serv, s, f)
+		} else if f.IsConsume() {
+			onConsume(serv, s, f)
 		}
 	}
 
@@ -59,5 +61,14 @@ func onProduce(serv *server.Server, s *server.Socket, f *frame.Frame) {
 	for _, q := range qs {
 		q.Push(f.Body)
 		log.Infof("produce %s => %s", q.Name, f.GetBody())
+	}
+}
+
+func onConsume(serv *server.Server, s *server.Socket, f *frame.Frame) {
+	qs := serv.GetQueues(f.GetSubject())
+
+	for _, q := range qs {
+		q.Consume(s.ID)
+		log.Infof("consume %s => %s", s.ID, q.Name)
 	}
 }
