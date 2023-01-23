@@ -1,10 +1,10 @@
 # vayeate
  
-a persistent queue
+a persistent distributed queue
 
 | Feature          | Status |
 |------------------|--------|
+| Meshing		   |        |
 | Persistence      |        |
-| Geo              |        |
 | Wildcards        |        |
 | Admin Portal     |        |
