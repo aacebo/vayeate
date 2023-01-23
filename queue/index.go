@@ -43,8 +43,8 @@ func (self *Queue) Consume(id string) {
 func (self *Queue) Start(onConsume func(id string, payload []byte)) {
 	for {
 		payload := <-self.buffer
-		consumerId := self.consumers.CyclicNext()
-		onConsume(consumerId, payload)
+		id := self.consumers.CyclicNext()
+		onConsume(id, payload)
 	}
 }
 
