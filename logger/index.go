@@ -2,11 +2,14 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
 
+const path = "./logs"
 const logFlag = log.Ldate | log.Ltime | log.Lshortfile
+const fileFlag = os.O_RDWR | os.O_CREATE | os.O_APPEND
 
 type Logger struct {
 	info  *log.Logger
@@ -16,11 +19,41 @@ type Logger struct {
 }
 
 func New(prefix string) *Logger {
+	err := os.Mkdir(path, 0755)
+
+	if err != nil && os.IsExist(err) == false {
+		panic(err)
+	}
+
+	infof, err := os.OpenFile(fmt.Sprintf("%s/info.log", path), fileFlag, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
+	warnf, err := os.OpenFile(fmt.Sprintf("%s/warn.log", path), fileFlag, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
+	debugf, err := os.OpenFile(fmt.Sprintf("%s/debug.log", path), fileFlag, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
+	errf, err := os.OpenFile(fmt.Sprintf("%s/error.log", path), fileFlag, 0666)
+
+	if err != nil {
+		panic(err)
+	}
+
 	return &Logger{
-		info:  log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "info"), logFlag),
-		warn:  log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "warn"), logFlag),
-		debug: log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "debug"), logFlag),
-		error: log.New(os.Stderr, fmt.Sprintf("%s %s ", prefix, "error"), logFlag),
+		info:  log.New(io.MultiWriter(os.Stdout, infof), fmt.Sprintf("%s %s ", prefix, "info"), logFlag),
+		warn:  log.New(io.MultiWriter(os.Stdout, warnf), fmt.Sprintf("%s %s ", prefix, "warn"), logFlag),
+		debug: log.New(io.MultiWriter(os.Stdout, debugf), fmt.Sprintf("%s %s ", prefix, "debug"), logFlag),
+		error: log.New(io.MultiWriter(os.Stderr, errf), fmt.Sprintf("%s %s ", prefix, "error"), logFlag),
 	}
 }
 

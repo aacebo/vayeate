@@ -12,12 +12,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var log = logger.New("server")
-
 type Server struct {
 	ID   string
 	Port int
 
+	log      *logger.Logger
 	listener net.Listener
 	sockets  map[string]*Socket
 	queues   map[string]*queue.Queue
@@ -27,6 +26,7 @@ func New(port int) (*Server, error) {
 	id := uuid.NewString()
 	sockets := map[string]*Socket{}
 	queues := map[string]*queue.Queue{}
+	log := logger.New(fmt.Sprintf("server:%s", id))
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 
 	if err != nil {
@@ -36,6 +36,7 @@ func New(port int) (*Server, error) {
 	return &Server{
 		id,
 		port,
+		log,
 		listener,
 		sockets,
 		queues,
@@ -92,8 +93,8 @@ func (self *Server) AddQueue(q *queue.Queue) *queue.Queue {
 func (self *Server) onConnection(
 	conn net.Conn,
 	onConnect func(s *Socket),
-	onFrame func(s *Socket,f *frame.Frame),
-	onError func (err error),
+	onFrame func(s *Socket, f *frame.Frame),
+	onError func(err error),
 ) {
 	s := NewSocket(conn)
 	self.sockets[s.ID] = s
@@ -116,6 +117,8 @@ func (self *Server) onConnection(
 
 		if f == nil || err != nil {
 			if err != nil {
+				self.log.Warn(err)
+
 				if onError != nil {
 					onError(err)
 				}
@@ -142,7 +145,7 @@ func (self *Server) onPing(s *Socket) {
 	err := s.Write(frame.NewPong())
 
 	if err != nil {
-		log.Warn(err)
+		self.log.Warn(err)
 		return
 	}
 }

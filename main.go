@@ -38,11 +38,7 @@ func main() {
 		}
 	}
 
-	var onError = func(err error) {
-		log.Warn(err)
-	}
-
-	err = serv.Listen(onConnect, onFrame, onError)
+	err = serv.Listen(onConnect, onFrame, nil)
 
 	if err != nil {
 		log.Error(err)

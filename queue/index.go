@@ -12,8 +12,8 @@ type Queue struct {
 	ID   string
 	Name string
 
-	messages  []*Message
-	log       *logger.Logger
+	messages []*Message
+	log      *logger.Logger
 }
 
 func New(name string) *Queue {
