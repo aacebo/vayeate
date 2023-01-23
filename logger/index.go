@@ -16,14 +16,12 @@ type Logger struct {
 }
 
 func New(prefix string) *Logger {
-	v := Logger{
+	return &Logger{
 		info:  log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "info"), logFlag),
 		warn:  log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "warn"), logFlag),
 		debug: log.New(os.Stdout, fmt.Sprintf("%s %s ", prefix, "debug"), logFlag),
 		error: log.New(os.Stderr, fmt.Sprintf("%s %s ", prefix, "error"), logFlag),
 	}
-
-	return &v
 }
 
 func (self *Logger) Info(v ...any) {

@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 	"time"
+
 	"vayeate/logger"
 
 	"github.com/google/uuid"
@@ -20,11 +21,14 @@ type Queue struct {
 func New(name string) *Queue {
 	id := uuid.NewString()
 	log := logger.New(fmt.Sprintf("queue:%s", id))
-	self := Queue{id, name, []*Message{}, log, map[string]int64{}}
 
-	log.Infoln("created")
-
-	return &self
+	return &Queue{
+		id,
+		name,
+		[]*Message{},
+		log,
+		map[string]int64{},
+	}
 }
 
 func (self *Queue) Push(payload []byte) *Message {

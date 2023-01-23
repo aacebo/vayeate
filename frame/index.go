@@ -37,43 +37,35 @@ type Frame struct {
 }
 
 func New(code OpCode, subject []byte, body []byte) *Frame {
-	self := Frame{code, subject, body}
-	return &self
+	return &Frame{code, subject, body}
 }
 
 func NewClose() *Frame {
-	self := Frame{CLOSE, []byte{}, []byte{}}
-	return &self
+	return &Frame{CLOSE, []byte{}, []byte{}}
 }
 
 func NewPing() *Frame {
-	self := Frame{PING, []byte{}, []byte{}}
-	return &self
+	return &Frame{PING, []byte{}, []byte{}}
 }
 
 func NewPong() *Frame {
-	self := Frame{PONG, []byte{}, []byte{}}
-	return &self
+	return &Frame{PONG, []byte{}, []byte{}}
 }
 
 func NewAssert(subject []byte) *Frame {
-	self := Frame{ASSERT, subject, []byte{}}
-	return &self
+	return &Frame{ASSERT, subject, []byte{}}
 }
 
 func NewProduce(subject []byte, body []byte) *Frame {
-	self := Frame{PRODUCE, subject, body}
-	return &self
+	return &Frame{PRODUCE, subject, body}
 }
 
 func NewConsume(subject []byte) *Frame {
-	self := Frame{CONSUME, subject, []byte{}}
-	return &self
+	return &Frame{CONSUME, subject, []byte{}}
 }
 
 func NewAck(subject []byte) *Frame {
-	self := Frame{ACK, subject, []byte{}}
-	return &self
+	return &Frame{ACK, subject, []byte{}}
 }
 
 func Decode(reader *bufio.Reader) (*Frame, error) {
@@ -142,8 +134,7 @@ func Decode(reader *bufio.Reader) (*Frame, error) {
 		body = append(body, b)
 	}
 
-	self := Frame{code, subject, body}
-	return &self, nil
+	return &Frame{code, subject, body}, nil
 }
 
 func (self *Frame) Encode() []byte {

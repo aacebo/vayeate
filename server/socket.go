@@ -36,8 +36,6 @@ func NewSocket(conn net.Conn) *Socket {
 	self := Socket{id, closed, now, nil, log, reader, conn}
 	self.pingTimer = time.AfterFunc(timeout, onTimeout(&self))
 
-	log.Debugln("connected")
-
 	return &self
 }
 

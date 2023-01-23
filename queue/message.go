@@ -15,6 +15,10 @@ type Message struct {
 func NewMessage(payload []byte) *Message {
 	id := uuid.NewString()
 	now := time.Now().Unix()
-	self := Message{id, payload, now}
-	return &self
+
+	return &Message{
+		id,
+		payload,
+		now,
+	}
 }

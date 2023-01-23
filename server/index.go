@@ -8,18 +8,23 @@ import (
 	"vayeate/frame"
 	"vayeate/logger"
 	"vayeate/queue"
+
+	"github.com/google/uuid"
 )
 
 var log = logger.New("server")
 
 type Server struct {
-	port     int
+	ID   string
+	Port int
+
 	listener net.Listener
 	sockets  map[string]*Socket
 	queues   map[string]*queue.Queue
 }
 
 func New(port int) (*Server, error) {
+	id := uuid.NewString()
 	sockets := map[string]*Socket{}
 	queues := map[string]*queue.Queue{}
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -28,8 +33,13 @@ func New(port int) (*Server, error) {
 		return nil, err
 	}
 
-	self := Server{port, listener, sockets, queues}
-	return &self, nil
+	return &Server{
+		id,
+		port,
+		listener,
+		sockets,
+		queues,
+	}, nil
 }
 
 func (self *Server) Listen() error {
