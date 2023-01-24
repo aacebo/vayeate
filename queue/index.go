@@ -47,15 +47,3 @@ func (self *Queue) Start(onConsume func(id string, payload []byte)) {
 		onConsume(id, payload)
 	}
 }
-
-// func (self *Queue) Push(payload []byte) *Message {
-// 	message := NewMessage(payload)
-// 	self.messages = append(self.messages, message)
-// 	return message
-// }
-
-// func (self *Queue) Pop() *Message {
-// 	message := self.messages[0]
-// 	self.messages = self.messages[1:]
-// 	return message
-// }
