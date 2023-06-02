@@ -2,6 +2,8 @@
 
 a distributed message broker
 
+![](./docs/diagram_0.jpg)
+
 ## Environment
 
 > all environment variable names should be prefixed with VAYEATE_
