@@ -100,6 +100,29 @@ export class Client {
         });
     }
 
+    subscribe(topic: string) {
+        return new Promise<void>((resolve, reject) => {
+            const m = new Message('subscribe', { topic });
+
+            this._socket.once('error', reject);
+            this._socket.once('data', buf => {
+                const ack = new Message<'subscribeAck'>(buf);
+
+                if (ack.type !== 'subscribeAck') {
+                    return reject(new Error('waiting for subscribe acknowledgement'));
+                }
+
+                resolve();
+            });
+
+            this._socket.write(m.serialize(), err => {
+                if (err) {
+                    return reject(err);
+                }
+            });
+        });
+    }
+
     private _onConncted() {
         this._socket.on('data', this._onData.bind(this));
         this._pingTimer = setInterval(() => {

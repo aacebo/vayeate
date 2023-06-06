@@ -9,4 +9,5 @@ import { Client } from './client';
     }));
 
     await client.publish('aacebo/test', Buffer.from('testing123!'));
+    await client.subscribe('aacebo/test');
 })();

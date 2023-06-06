@@ -15,6 +15,10 @@ interface MessageTypePayload {
         readonly payload: Buffer;
     };
     readonly publishAck: { };
+    readonly subscribe: {
+        readonly topic: string;
+    };
+    readonly subscribeAck: { };
     readonly ping: { };
     readonly pingAck: { };
 }
@@ -25,6 +29,8 @@ const MESSAGE_TYPE_CODE = {
     connectAck: 2,
     publish: 3,
     publishAck: 4,
+    subscribe: 8,
+    subscribeAck: 9,
     ping: 12,
     pingAck: 13
 };
@@ -35,6 +41,8 @@ const CODE_MESSAGE_TYPE = {
     2: 'connectAck',
     3: 'publish',
     4: 'publishAck',
+    8: 'subscribe',
+    9: 'subscribeAck',
     12: 'ping',
     13: 'pingAck'
 };
@@ -90,6 +98,15 @@ const MESSAGE_TYPE_TRANSFORM = {
         };
     },
     publishAck: (_: Buffer) => ({ }),
+    subscribe: (b: Buffer) => {
+        const len = b.readUint32BE(13);
+        const value = b.subarray(13 + 4, 13 + 4 + len);
+
+        return {
+            topic: value.toString()
+        };
+    },
+    subscribeAck: (_: Buffer) => ({ }),
     ping: (_: Buffer) => ({ }),
     pingAck: (_: Buffer) => ({ })
 };
