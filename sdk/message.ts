@@ -104,7 +104,7 @@ export class Message<T extends keyof MessageTypePayload> {
     constructor(...args: any[]) {
         if (args.length == 2) {
             this.type = args[0];
-            this.sentAt = BigInt(Date.now());
+            this.sentAt = BigInt(new Date().getTime());
             this.payload = args[1];
         } else {
             const buf: Buffer = args[0];

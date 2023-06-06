@@ -14,7 +14,7 @@ func NewErrorMessage(reason string) *Message {
 
 	return &Message{
 		Code:    ERROR,
-		SentAt:  time.Now().Unix(),
+		SentAt:  time.Now().UnixMilli(),
 		Payload: serialize.Marshall(v),
 	}
 }

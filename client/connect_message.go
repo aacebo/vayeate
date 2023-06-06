@@ -26,7 +26,7 @@ func NewConnectAckMessage(sessionId string) *Message {
 
 	return &Message{
 		Code:    CONNECT_ACK,
-		SentAt:  time.Now().Unix(),
+		SentAt:  time.Now().UnixMilli(),
 		Payload: serialize.Marshall(v),
 	}
 }

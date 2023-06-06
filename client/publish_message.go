@@ -19,7 +19,7 @@ func (self *Message) GetPublishPayload() *PublishMessagePayload {
 func NewPublishAckMessage() *Message {
 	return &Message{
 		Code:    PUBLISH_ACK,
-		SentAt:  time.Now().Unix(),
+		SentAt:  time.Now().UnixMilli(),
 		Payload: []byte{},
 	}
 }

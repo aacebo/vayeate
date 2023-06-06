@@ -16,6 +16,7 @@ type Client struct {
 	ID            string    `json:"id"`
 	SessionID     string    `json:"session_id"`
 	Address       string    `json:"address"`
+	LatencyMS     int64     `json:"latency_ms"`
 	ConnectedAt   time.Time `json:"connected_at"`
 	LastMessageAt time.Time `json:"last_message_at"`
 
@@ -43,12 +44,11 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 		return nil, errors.New("unauthorized: invalid username/password")
 	}
 
-	sessionId := uuid.NewString()
-
 	self := Client{
 		ID:            payload.ClientID,
-		SessionID:     sessionId,
+		SessionID:     uuid.NewString(),
 		Address:       conn.RemoteAddr().String(),
+		LatencyMS:     time.Now().UnixMilli() - m.SentAt,
 		ConnectedAt:   time.Now(),
 		LastMessageAt: time.Now(),
 		open:          true,
@@ -77,6 +77,7 @@ func (self *Client) Read() (*Message, error) {
 		return nil, err
 	}
 
+	self.LatencyMS = time.Now().UnixMilli() - m.SentAt
 	self.LastMessageAt = time.Now()
 	self.pingTimer.Reset(timeout)
 	return m, nil
