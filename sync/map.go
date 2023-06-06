@@ -1,8 +1,6 @@
 package sync
 
-import (
-	"sync"
-)
+import "sync"
 
 type SyncMap[K comparable, V any] struct {
 	mu      sync.RWMutex

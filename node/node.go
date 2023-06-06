@@ -8,6 +8,7 @@ import (
 	"vayeate/client"
 	"vayeate/logger"
 	"vayeate/sync"
+	"vayeate/topic"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +22,7 @@ type Node struct {
 	log            *logger.Logger
 	clientListener net.Listener
 	clients        sync.SyncMap[string, *client.Client]
+	topics         sync.SyncMap[string, *topic.Topic]
 }
 
 func New(clientPort string, username string, password string) (*Node, error) {
@@ -45,6 +47,7 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
 		clientListener: cl,
 		clients:        sync.NewSyncMap[string, *client.Client](),
+		topics:         sync.NewSyncMap[string, *topic.Topic](),
 	}
 
 	return self, nil
@@ -68,6 +71,10 @@ func (self *Node) Listen() error {
 
 func (self *Node) GetClients() []*client.Client {
 	return self.clients.Slice()
+}
+
+func (self *Node) GetTopics() []*topic.Topic {
+	return self.topics.Slice()
 }
 
 func (self *Node) onClientConnection(conn net.Conn) {
@@ -108,6 +115,15 @@ func (self *Node) onClientConnection(conn net.Conn) {
 		if m.Code == client.PING {
 			c.Write(client.NewPingAckMessage())
 		} else if m.Code == client.PUBLISH {
+			p := m.GetPublishPayload()
+			t := self.topics.Get(p.Topic)
+
+			if t == nil {
+				t = topic.New(p.Topic)
+				self.topics.Set(t.Name, t)
+			}
+
+			t.Queue.Push(p.Payload)
 			c.Write(client.NewPublishAckMessage())
 		}
 	}

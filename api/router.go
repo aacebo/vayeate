@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"vayeate/api/clients"
+	"vayeate/api/topics"
 	"vayeate/node"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +13,7 @@ import (
 func NewRouter(n *node.Node) *chi.Mux {
 	r := chi.NewRouter()
 	clients.NewRouter(r, n)
+	topics.NewRouter(r, n)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, n)
