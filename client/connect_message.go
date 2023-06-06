@@ -1,6 +1,7 @@
 package client
 
 import (
+	"time"
 	"vayeate/serialize"
 )
 
@@ -25,6 +26,7 @@ func NewConnectAckMessage(sessionId string) *Message {
 
 	return &Message{
 		Code:    CONNECT_ACK,
+		SentAt:  time.Now().Unix(),
 		Payload: serialize.Marshall(v),
 	}
 }

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"time"
 	"vayeate/serialize"
 )
 
@@ -18,6 +19,7 @@ func (self *Message) GetPublishPayload() *PublishMessagePayload {
 func NewPublishAckMessage() *Message {
 	return &Message{
 		Code:    PUBLISH_ACK,
+		SentAt:  time.Now().Unix(),
 		Payload: []byte{},
 	}
 }

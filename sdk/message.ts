@@ -41,15 +41,15 @@ const CODE_MESSAGE_TYPE = {
 
 const MESSAGE_TYPE_TRANSFORM = {
     error: (b: Buffer) => {
-        const len = b.readUint32BE(5);
-        const value = b.subarray(9, 9 + len);
+        const len = b.readUint32BE(13);
+        const value = b.subarray(13 + 4, 13 + 4 + len);
 
         return {
             reason: value.toString()
         };
     },
     connect: (b: Buffer) => {
-        let i = 5;
+        let i = 13;
         let len = b.readUint32BE(i);
         const clientId = b.subarray(i + 4, i + 4 + len);
         i = i + 4 + len;
@@ -68,15 +68,15 @@ const MESSAGE_TYPE_TRANSFORM = {
         };
     },
     connectAck: (b: Buffer) => {
-        const len = b.readUint32BE(5);
-        const value = b.subarray(9, 9 + len);
+        const len = b.readUint32BE(13);
+        const value = b.subarray(13 + 4, 13 + 4 + len);
         
         return {
             sessionId: value.toString()
         };
     },
     publish: (b: Buffer) => {
-        let i = 5;
+        let i = 13;
         let len = b.readUint32BE(i);
         const topic = b.subarray(i + 4, i + 4 + len);
         i = i + 4 + len;
@@ -96,6 +96,7 @@ const MESSAGE_TYPE_TRANSFORM = {
 
 export class Message<T extends keyof MessageTypePayload> {
     readonly type: T;
+    readonly sentAt: bigint;
     readonly payload: MessageTypePayload[T];
 
     constructor(type: T, payload: MessageTypePayload[T])
@@ -103,10 +104,12 @@ export class Message<T extends keyof MessageTypePayload> {
     constructor(...args: any[]) {
         if (args.length == 2) {
             this.type = args[0];
+            this.sentAt = BigInt(Date.now());
             this.payload = args[1];
         } else {
             const buf: Buffer = args[0];
             this.type = CODE_MESSAGE_TYPE[buf.at(0)!];
+            this.sentAt = buf.readBigInt64BE(1);
             this.payload = MESSAGE_TYPE_TRANSFORM[this.type](buf) as any;
         }
     }
@@ -127,10 +130,13 @@ export class Message<T extends keyof MessageTypePayload> {
         }
 
         const length = Buffer.from([0, 0, 0, 0]);
+        const sentAt = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0]);
         length.writeUInt32BE(payload.length);
+        sentAt.writeBigInt64BE(this.sentAt);
 
         return Buffer.concat([
             code,
+            sentAt,
             length,
             payload
         ]);

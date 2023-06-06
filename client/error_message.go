@@ -1,6 +1,9 @@
 package client
 
-import "vayeate/serialize"
+import (
+	"time"
+	"vayeate/serialize"
+)
 
 type ErrorMessagePayload struct {
 	Reason string
@@ -11,6 +14,7 @@ func NewErrorMessage(reason string) *Message {
 
 	return &Message{
 		Code:    ERROR,
+		SentAt:  time.Now().Unix(),
 		Payload: serialize.Marshall(v),
 	}
 }

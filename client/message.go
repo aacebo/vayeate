@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 )
 
 type Code uint8
@@ -27,6 +28,7 @@ const (
 
 type Message struct {
 	Code    Code
+	SentAt  int64
 	Payload []byte
 }
 
@@ -37,6 +39,15 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var sentAt int64
+	err = binary.Read(reader, binary.BigEndian, &sentAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(sentAt)
 
 	var length uint32
 	err = binary.Read(reader, binary.BigEndian, &length)
@@ -52,14 +63,21 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 		return nil, err
 	}
 
-	return &Message{code, payload}, nil
+	return &Message{code, sentAt, payload}, nil
 }
 
 func (self *Message) Serialize() []byte {
 	b := []byte{byte(self.Code)}
+
+	sentAt := make([]byte, 8)
+	binary.BigEndian.PutUint64(sentAt, uint64(self.SentAt))
+
 	length := make([]byte, 4)
 	binary.BigEndian.PutUint32(length, uint32(len(self.Payload)))
+
+	b = append(b, sentAt...)
 	b = append(b, length...)
 	b = append(b, self.Payload...)
+
 	return b
 }
