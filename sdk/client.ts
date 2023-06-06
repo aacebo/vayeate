@@ -16,16 +16,35 @@ export interface ClientConnectOptions {
 export class Client {
     private readonly _socket: net.Socket;
 
+    get sessionId() { return this._sessionId; }
+    private _sessionId?: string;
+
     constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
         this._socket.on('data', this._onData.bind(this));
         this._socket.on('end', this.close.bind(this));
     }
 
+    /**
+     * open a new connection and authenticate
+     * @param options
+     * @returns Session ID
+     */
     open(options: ClientConnectOptions) {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             this._socket.once('error', reject);
             this._socket.connect(options.port || 6789, options.host, () => {
+                this._socket.once('data', buf => {
+                    const m = new Message<'connectAck'>(buf);
+
+                    if (m.type !== 'connectAck') {
+                        return reject(new Error('connect handshake incomplete'));
+                    }
+
+                    this._sessionId = m.payload.sessionId;
+                    resolve(m.payload.sessionId);
+                });
+
                 this._socket.write(new Message('connect', {
                     clientId: this._options.id,
                     username: options.username || 'admin',
@@ -34,14 +53,14 @@ export class Client {
                     if (err) {
                         return reject(err);
                     }
-
-                    resolve();
                 });
             });
         });
     }
 
     close() {
+        this._sessionId = undefined;
+
         if (this._socket.closed) {
             return;
         }
@@ -49,18 +68,24 @@ export class Client {
         this._socket.destroy();
     }
 
-    send(payload: string) {
+    publish(topic: string, payload: Buffer) {
         return new Promise<void>((resolve, reject) => {
-            this._socket.write(Buffer.from([
-                3,
-                ...Buffer.from([0, 0, 0, payload.length]),
-                ...Buffer.from(payload)
-            ]), err => {
-                if (err) {
-                    return reject(err);
+            const m = new Message('publish', { topic, payload });
+
+            this._socket.once('data', buf => {
+                const ack = new Message<'publishAck'>(buf);
+
+                if (ack.type !== 'publishAck') {
+                    return reject(new Error('waiting for publish acknowledgement'));
                 }
 
                 resolve();
+            });
+
+            this._socket.write(m.serialize(), err => {
+                if (err) {
+                    return reject(err);
+                }
             });
         });
     }

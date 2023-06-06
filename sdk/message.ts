@@ -7,16 +7,25 @@ interface MessageTypePayload {
     readonly connectAck: {
         readonly sessionId: string;
     };
+    readonly publish: {
+        readonly topic: string;
+        readonly payload: Buffer;
+    };
+    readonly publishAck: { };
 }
 
 const MESSAGE_TYPE_CODE = {
     connect: 1,
-    connectAck: 2
+    connectAck: 2,
+    publish: 3,
+    publishAck: 4
 };
 
 const CODE_MESSAGE_TYPE = {
     1: 'connect',
-    2: 'connectAck'
+    2: 'connectAck',
+    3: 'publish',
+    4: 'publishAck'
 };
 
 const MESSAGE_TYPE_TRANSFORM = {
@@ -46,6 +55,23 @@ const MESSAGE_TYPE_TRANSFORM = {
         return {
             sessionId: value.toString()
         };
+    },
+    publish: (b: Buffer) => {
+        let i = 5;
+        let len = b.readUint32BE(i);
+        const topic = b.subarray(i + 4, i + 4 + len);
+        i = i + 4 + len;
+
+        len = b.readUint32BE(i);
+        const payload = b.subarray(i + 4, i + 4 + len);
+
+        return {
+            topic: topic.toString(),
+            payload
+        };
+    },
+    publishAck: (_: Buffer) => {
+        return { };
     }
 };
 

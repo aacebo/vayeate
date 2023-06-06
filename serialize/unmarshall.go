@@ -19,7 +19,9 @@ func parse(startIdx int, b []byte, v reflect.Value) int {
 	length := binary.BigEndian.Uint32(b[startIdx : startIdx+4])
 	value := b[startIdx+4 : startIdx+4+int(length)]
 
-	if kind == reflect.String {
+	if kind == reflect.Slice {
+		v.SetBytes(value)
+	} else if kind == reflect.String {
 		v.SetString(string(value))
 	}
 

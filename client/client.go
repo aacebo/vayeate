@@ -52,3 +52,8 @@ func (self *Client) Close() {
 func (self *Client) Read() (*Message, error) {
 	return ReadMessage(self.reader)
 }
+
+func (self *Client) Write(m *Message) error {
+	_, err := self.conn.Write(m.Serialize())
+	return err
+}

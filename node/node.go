@@ -86,6 +86,10 @@ func (self *Node) onClientConnection(conn net.Conn) {
 			continue
 		}
 
-		fmt.Println(*m)
+		if m.Code == client.PUBLISH {
+			self.log.Infoln(*m)
+			self.log.Infoln(m.GetPublishPayload())
+			c.Write(client.NewPublishAckMessage())
+		}
 	}
 }

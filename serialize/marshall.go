@@ -17,9 +17,13 @@ func Marshall[T any](v T) []byte {
 }
 
 func serialize(v reflect.Value) []byte {
+	kind := v.Kind()
 	b := make([]byte, 4)
 
-	if v.Kind() == reflect.String {
+	if kind == reflect.Slice {
+		binary.BigEndian.PutUint32(b, uint32(v.Len()))
+		b = append(b, v.Bytes()...)
+	} else if kind == reflect.String {
 		binary.BigEndian.PutUint32(b, uint32(v.Len()))
 		b = append(b, []byte(v.String())...)
 	}
