@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 )
 
 type Code uint8
@@ -52,4 +53,15 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 	}
 
 	return &Message{code, payload}, nil
+}
+
+func (self *Message) Serialize() []byte {
+	fmt.Println(self.Payload)
+	b := []byte{byte(self.Code)}
+	length := make([]byte, 4)
+	binary.BigEndian.PutUint32(length, uint32(len(self.Payload)))
+	b = append(b, length...)
+	b = append(b, self.Payload...)
+	fmt.Println(b)
+	return b
 }

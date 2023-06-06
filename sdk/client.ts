@@ -1,18 +1,43 @@
 import net from 'net';
 
+import { connectMessage } from './message';
+
+export interface ClientOptions {
+    readonly id: string;
+}
+
+export interface ClientConnectOptions {
+    readonly host: string;
+    readonly port?: number;
+    readonly username?: string;
+    readonly password?: string;
+}
+
 export class Client {
     private readonly _socket: net.Socket;
 
-    constructor() {
+    constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
         this._socket.on('data', this._onData.bind(this));
         this._socket.on('end', this.close.bind(this));
     }
 
-    open(host: string, port: number) {
+    open(options: ClientConnectOptions) {
         return new Promise<void>((resolve, reject) => {
             this._socket.once('error', reject);
-            this._socket.connect(port, host, resolve);
+            this._socket.connect(options.port || 6789, options.host, () => {
+                this._socket.write(connectMessage(
+                    this._options.id,
+                    options.username || 'admin',
+                    options.password || 'admin'
+                ), err => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve();
+                });
+            });
         });
     }
 
@@ -41,6 +66,16 @@ export class Client {
     }
 
     private _onData(buf: Buffer) {
-        console.info(buf);
+        const code = buf.at(0);
+        const length = buf.readUInt32BE(1);
+        const payload = buf.subarray(5);
+        const sessionIdLength = buf.readUInt32BE(5);
+        const sessionId = buf.subarray(9);
+
+        console.log('code', code);
+        console.log('length', length);
+        console.log('payload', payload);
+        console.log('session_id length', sessionIdLength);
+        console.log('session_id', sessionId.toString());
     }
 }

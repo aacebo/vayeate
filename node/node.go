@@ -2,6 +2,7 @@ package node
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"vayeate/client"
@@ -63,13 +64,24 @@ func (self *Node) Listen() error {
 }
 
 func (self *Node) onClientConnection(conn net.Conn) {
-	c := client.FromConnection(self.Username, self.Password, conn)
+	c, err := client.FromConnection(self.Username, self.Password, conn)
+
+	if err != nil {
+		self.log.Warn(err)
+		conn.Close()
+		return
+	}
+
 	defer c.Close()
 
 	for {
 		m, err := c.Read()
 
 		if err != nil {
+			if err == io.EOF {
+				return
+			}
+
 			self.log.Warnln(err)
 			continue
 		}
