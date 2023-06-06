@@ -18,9 +18,3 @@ func NewErrorMessage(reason string) *Message {
 		Payload: serialize.Marshall(v),
 	}
 }
-
-func (self *Message) GetErrorPayload() *ErrorMessagePayload {
-	v := ErrorMessagePayload{}
-	serialize.Unmarshall(self.Payload, &v)
-	return &v
-}
