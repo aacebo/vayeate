@@ -4,13 +4,15 @@ import (
 	"bufio"
 	"errors"
 	"net"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 type Client struct {
-	ID        string `json:"id"`
-	SessionID string `json:"session_id"`
+	ID          string    `json:"id"`
+	SessionID   string    `json:"session_id"`
+	ConnectedAt time.Time `json:"connected_at"`
 
 	conn   net.Conn
 	reader *bufio.Reader
@@ -25,23 +27,23 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 	}
 
 	if m.Code != CONNECT {
-		return nil, errors.New("client: first message must be of type `CONNECT`")
+		return nil, errors.New("first message must be of type `CONNECT`")
 	}
 
 	payload := m.GetConnectPayload()
 
 	if payload.Username != username || payload.Password != password {
-		return nil, errors.New("client: unauthorized")
+		return nil, errors.New("unauthorized: invalid username/password")
 	}
 
 	sessionId := uuid.NewString()
-	conn.Write(NewConnectAckMessage(sessionId).Serialize())
 
 	return &Client{
-		ID:        payload.ClientID,
-		SessionID: sessionId,
-		conn:      conn,
-		reader:    reader,
+		ID:          payload.ClientID,
+		SessionID:   sessionId,
+		ConnectedAt: time.Now(),
+		conn:        conn,
+		reader:      reader,
 	}, nil
 }
 

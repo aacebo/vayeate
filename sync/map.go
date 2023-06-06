@@ -16,6 +16,13 @@ func NewSyncMap[K comparable, V any]() SyncMap[K, V] {
 	}
 }
 
+func (self *SyncMap[K, V]) Has(key K) bool {
+	self.mu.RLock()
+	_, ok := self.content[key]
+	self.mu.RUnlock()
+	return ok
+}
+
 func (self *SyncMap[K, V]) Get(key K) V {
 	self.mu.RLock()
 	v := self.content[key]

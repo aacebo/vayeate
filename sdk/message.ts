@@ -1,4 +1,7 @@
 interface MessageTypePayload {
+    readonly error: {
+        readonly reason: string;
+    };
     readonly connect: {
         readonly clientId: string;
         readonly username: string;
@@ -15,6 +18,7 @@ interface MessageTypePayload {
 }
 
 const MESSAGE_TYPE_CODE = {
+    error: 0,
     connect: 1,
     connectAck: 2,
     publish: 3,
@@ -22,6 +26,7 @@ const MESSAGE_TYPE_CODE = {
 };
 
 const CODE_MESSAGE_TYPE = {
+    0: 'error',
     1: 'connect',
     2: 'connectAck',
     3: 'publish',
@@ -29,6 +34,14 @@ const CODE_MESSAGE_TYPE = {
 };
 
 const MESSAGE_TYPE_TRANSFORM = {
+    error: (b: Buffer) => {
+        const len = b.readUint32BE(5);
+        const value = b.subarray(9, 9 + len);
+
+        return {
+            reason: value.toString()
+        };
+    },
     connect: (b: Buffer) => {
         let i = 5;
         let len = b.readUint32BE(i);

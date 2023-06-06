@@ -8,6 +8,7 @@ import (
 type Code uint8
 
 const (
+	ERROR           Code = 0
 	CONNECT         Code = 1
 	CONNECT_ACK     Code = 2
 	PUBLISH         Code = 3

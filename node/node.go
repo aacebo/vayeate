@@ -74,11 +74,18 @@ func (self *Node) onClientConnection(conn net.Conn) {
 	c, err := client.FromConnection(self.Username, self.Password, conn)
 
 	if err != nil {
-		self.log.Warn(err)
+		conn.Write(client.NewErrorMessage(err.Error()).Serialize())
 		conn.Close()
 		return
 	}
 
+	if self.clients.Has(c.ID) {
+		c.Write(client.NewErrorMessage(fmt.Sprintf("client_id `%s` is already is use", c.ID)))
+		c.Close()
+		return
+	}
+
+	c.Write(client.NewConnectAckMessage(c.SessionID))
 	self.clients.Set(c.ID, c)
 
 	defer func() {

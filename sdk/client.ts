@@ -21,7 +21,6 @@ export class Client {
 
     constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
-        this._socket.on('data', this._onData.bind(this));
         this._socket.on('end', this.close.bind(this));
     }
 
@@ -35,14 +34,21 @@ export class Client {
             this._socket.once('error', reject);
             this._socket.connect(options.port || 6789, options.host, () => {
                 this._socket.once('data', buf => {
-                    const m = new Message<'connectAck'>(buf);
+                    const m = new Message(buf);
 
                     if (m.type !== 'connectAck') {
-                        return reject(new Error('connect handshake incomplete'));
+                        let message = 'connect handshake incomplete';
+
+                        if (m.type === 'error') {
+                            message = (m as Message<'error'>).payload.reason;
+                        }
+
+                        return reject(new Error(message));
                     }
 
-                    this._sessionId = m.payload.sessionId;
-                    resolve(m.payload.sessionId);
+                    this._socket.on('data', this._onData.bind(this));
+                    this._sessionId = (m as Message<'connectAck'>).payload.sessionId;
+                    resolve(this._sessionId);
                 });
 
                 this._socket.write(new Message('connect', {
@@ -72,6 +78,7 @@ export class Client {
         return new Promise<void>((resolve, reject) => {
             const m = new Message('publish', { topic, payload });
 
+            this._socket.once('error', reject);
             this._socket.once('data', buf => {
                 const ack = new Message<'publishAck'>(buf);
 
