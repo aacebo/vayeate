@@ -1,6 +1,6 @@
 import net from 'net';
 
-import { connectMessage } from './message';
+import { Message } from './message';
 
 export interface ClientOptions {
     readonly id: string;
@@ -26,11 +26,11 @@ export class Client {
         return new Promise<void>((resolve, reject) => {
             this._socket.once('error', reject);
             this._socket.connect(options.port || 6789, options.host, () => {
-                this._socket.write(connectMessage(
-                    this._options.id,
-                    options.username || 'admin',
-                    options.password || 'admin'
-                ), err => {
+                this._socket.write(new Message('connect', {
+                    clientId: this._options.id,
+                    username: options.username || 'admin',
+                    password: options.password || 'admin'
+                }).serialize(), err => {
                     if (err) {
                         return reject(err);
                     }
@@ -66,16 +66,6 @@ export class Client {
     }
 
     private _onData(buf: Buffer) {
-        const code = buf.at(0);
-        const length = buf.readUInt32BE(1);
-        const payload = buf.subarray(5);
-        const sessionIdLength = buf.readUInt32BE(5);
-        const sessionId = buf.subarray(9);
-
-        console.log('code', code);
-        console.log('length', length);
-        console.log('payload', payload);
-        console.log('session_id length', sessionIdLength);
-        console.log('session_id', sessionId.toString());
+        console.log(new Message(buf));
     }
 }

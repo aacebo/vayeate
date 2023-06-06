@@ -16,12 +16,12 @@ func Unmarshall[T any](b []byte, v T) {
 
 func parse(startIdx int, b []byte, v reflect.Value) int {
 	kind := v.Kind()
-	length := binary.BigEndian.Uint16(b[startIdx : startIdx+2])
-	value := b[startIdx+2 : startIdx+2+int(length)]
+	length := binary.BigEndian.Uint32(b[startIdx : startIdx+4])
+	value := b[startIdx+4 : startIdx+4+int(length)]
 
 	if kind == reflect.String {
 		v.SetString(string(value))
 	}
 
-	return startIdx + 2 + int(length)
+	return startIdx + 4 + int(length)
 }
