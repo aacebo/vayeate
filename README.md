@@ -3,6 +3,7 @@
 a distributed message broker
 
 ![](./docs/diagram_0.jpg)
+![](./docs/diagram_1.jpg)
 
 ## Environment
 
