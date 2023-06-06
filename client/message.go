@@ -22,7 +22,6 @@ const (
 	UNSUBSCRIBE_ACK Code = 11
 	PING            Code = 12
 	PING_ACK        Code = 13
-	DISCONNECT      Code = 14
 )
 
 type Message struct {
