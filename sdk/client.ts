@@ -104,7 +104,7 @@ export class Client {
         this._socket.on('data', this._onData.bind(this));
         this._pingTimer = setInterval(() => {
             this._socket.write(new Message('ping', { }).serialize());
-        }, 5000);
+        }, 30000);
     }
 
     private _onData(buf: Buffer) {

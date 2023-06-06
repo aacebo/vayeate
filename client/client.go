@@ -3,11 +3,14 @@ package client
 import (
 	"bufio"
 	"errors"
+	"io"
 	"net"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var timeout = 60 * time.Second
 
 type Client struct {
 	ID            string    `json:"id"`
@@ -16,8 +19,10 @@ type Client struct {
 	ConnectedAt   time.Time `json:"connected_at"`
 	LastMessageAt time.Time `json:"last_message_at"`
 
-	conn   net.Conn
-	reader *bufio.Reader
+	open      bool
+	conn      net.Conn
+	reader    *bufio.Reader
+	pingTimer *time.Timer
 }
 
 func FromConnection(username string, password string, conn net.Conn) (*Client, error) {
@@ -40,22 +45,32 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 
 	sessionId := uuid.NewString()
 
-	return &Client{
+	self := Client{
 		ID:            payload.ClientID,
 		SessionID:     sessionId,
 		Address:       conn.RemoteAddr().String(),
 		ConnectedAt:   time.Now(),
 		LastMessageAt: time.Now(),
+		open:          true,
 		conn:          conn,
 		reader:        reader,
-	}, nil
+	}
+
+	self.pingTimer = time.AfterFunc(timeout, self.onConnectionTimeout)
+	return &self, nil
 }
 
 func (self *Client) Close() {
+	self.pingTimer.Stop()
 	self.conn.Close()
+	self.open = false
 }
 
 func (self *Client) Read() (*Message, error) {
+	if !self.open {
+		return nil, io.EOF
+	}
+
 	m, err := ReadMessage(self.reader)
 
 	if err != nil {
@@ -63,10 +78,16 @@ func (self *Client) Read() (*Message, error) {
 	}
 
 	self.LastMessageAt = time.Now()
+	self.pingTimer.Reset(timeout)
 	return m, nil
 }
 
 func (self *Client) Write(m *Message) error {
 	_, err := self.conn.Write(m.Serialize())
 	return err
+}
+
+func (self *Client) onConnectionTimeout() {
+	self.Write(NewErrorMessage("connection closed due to inactivity"))
+	self.Close()
 }
