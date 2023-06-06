@@ -14,10 +14,11 @@ export interface ClientConnectOptions {
 }
 
 export class Client {
-    private readonly _socket: net.Socket;
-
     get sessionId() { return this._sessionId; }
     private _sessionId?: string;
+
+    private readonly _socket: net.Socket;
+    private _pingTimer?: NodeJS.Timer;
 
     constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
@@ -46,7 +47,7 @@ export class Client {
                         return reject(new Error(message));
                     }
 
-                    this._socket.on('data', this._onData.bind(this));
+                    this._onConncted();
                     this._sessionId = (m as Message<'connectAck'>).payload.sessionId;
                     resolve(this._sessionId);
                 });
@@ -66,6 +67,8 @@ export class Client {
 
     close() {
         this._sessionId = undefined;
+        clearInterval(this._pingTimer);
+        this._pingTimer = undefined;
 
         if (this._socket.closed) {
             return;
@@ -95,6 +98,13 @@ export class Client {
                 }
             });
         });
+    }
+
+    private _onConncted() {
+        this._socket.on('data', this._onData.bind(this));
+        this._pingTimer = setInterval(() => {
+            this._socket.write(new Message('ping', { }).serialize());
+        }, 5000);
     }
 
     private _onData(buf: Buffer) {

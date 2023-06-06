@@ -16,12 +16,12 @@ func (self *Message) GetConnectPayload() *ConnectMessagePayload {
 	return &v
 }
 
-type ConnectMessageAckPayload struct {
+type ConnectAckMessagePayload struct {
 	SessionID string
 }
 
 func NewConnectAckMessage(sessionId string) *Message {
-	v := ConnectMessageAckPayload{sessionId}
+	v := ConnectAckMessagePayload{sessionId}
 
 	return &Message{
 		Code:    CONNECT_ACK,

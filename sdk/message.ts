@@ -15,6 +15,8 @@ interface MessageTypePayload {
         readonly payload: Buffer;
     };
     readonly publishAck: { };
+    readonly ping: { };
+    readonly pingAck: { };
 }
 
 const MESSAGE_TYPE_CODE = {
@@ -22,7 +24,9 @@ const MESSAGE_TYPE_CODE = {
     connect: 1,
     connectAck: 2,
     publish: 3,
-    publishAck: 4
+    publishAck: 4,
+    ping: 12,
+    pingAck: 13
 };
 
 const CODE_MESSAGE_TYPE = {
@@ -30,7 +34,9 @@ const CODE_MESSAGE_TYPE = {
     1: 'connect',
     2: 'connectAck',
     3: 'publish',
-    4: 'publishAck'
+    4: 'publishAck',
+    12: 'ping',
+    13: 'pingAck'
 };
 
 const MESSAGE_TYPE_TRANSFORM = {
@@ -83,9 +89,9 @@ const MESSAGE_TYPE_TRANSFORM = {
             payload
         };
     },
-    publishAck: (_: Buffer) => {
-        return { };
-    }
+    publishAck: (_: Buffer) => ({ }),
+    ping: (_: Buffer) => ({ }),
+    pingAck: (_: Buffer) => ({ })
 };
 
 export class Message<T extends keyof MessageTypePayload> {

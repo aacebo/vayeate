@@ -105,9 +105,9 @@ func (self *Node) onClientConnection(conn net.Conn) {
 			continue
 		}
 
-		if m.Code == client.PUBLISH {
-			self.log.Infoln(*m)
-			self.log.Infoln(m.GetPublishPayload())
+		if m.Code == client.PING {
+			c.Write(client.NewPingAckMessage())
+		} else if m.Code == client.PUBLISH {
 			c.Write(client.NewPublishAckMessage())
 		}
 	}
