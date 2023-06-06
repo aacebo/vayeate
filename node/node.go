@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"vayeate/client"
 	"vayeate/logger"
+	"vayeate/sync"
 
 	"github.com/google/uuid"
 )
@@ -19,6 +20,7 @@ type Node struct {
 
 	log            *logger.Logger
 	clientListener net.Listener
+	clients        sync.SyncMap[string, *client.Client]
 }
 
 func New(clientPort string, username string, password string) (*Node, error) {
@@ -42,6 +44,7 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		Password:       password,
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
 		clientListener: cl,
+		clients:        sync.NewSyncMap[string, *client.Client](),
 	}
 
 	return self, nil
@@ -63,6 +66,10 @@ func (self *Node) Listen() error {
 	}
 }
 
+func (self *Node) GetClients() []*client.Client {
+	return self.clients.Slice()
+}
+
 func (self *Node) onClientConnection(conn net.Conn) {
 	c, err := client.FromConnection(self.Username, self.Password, conn)
 
@@ -72,7 +79,12 @@ func (self *Node) onClientConnection(conn net.Conn) {
 		return
 	}
 
-	defer c.Close()
+	self.clients.Set(c.ID, c)
+
+	defer func() {
+		c.Close()
+		self.clients.Del(c.ID)
+	}()
 
 	for {
 		m, err := c.Read()
