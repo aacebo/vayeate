@@ -41,9 +41,9 @@ func (self *SyncMap[K, V]) Del(key K) {
 }
 
 func (self *SyncMap[K, V]) Len() int {
-	self.mu.Lock()
+	self.mu.RLock()
 	l := len(self.content)
-	self.mu.Unlock()
+	self.mu.RUnlock()
 	return l
 }
 
@@ -61,12 +61,12 @@ func (self *SyncMap[K, V]) Slice() []V {
 	return arr
 }
 
-func (self *SyncMap[K, V]) Iterate(callback func(k K, v V)) {
-	self.mu.Lock()
+func (self *SyncMap[K, V]) ForEach(callback func(k K, v V)) {
+	self.mu.RLock()
 
 	for k, v := range self.content {
 		callback(k, v)
 	}
 
-	self.mu.Unlock()
+	self.mu.RUnlock()
 }

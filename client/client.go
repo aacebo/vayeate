@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"time"
+	"vayeate/sync"
 
 	"github.com/google/uuid"
 )
@@ -15,12 +16,13 @@ var readTimeout = 60 * time.Second
 var writeTimeout = 5 * time.Second
 
 type Client struct {
-	ID            string    `json:"id"`
-	SessionID     string    `json:"session_id"`
-	Address       string    `json:"address"`
-	LatencyMS     int64     `json:"latency_ms"`
-	ConnectedAt   time.Time `json:"connected_at"`
-	LastMessageAt time.Time `json:"last_message_at"`
+	ID            string                       `json:"id"`
+	SessionID     string                       `json:"session_id"`
+	Address       string                       `json:"address"`
+	LatencyMS     int64                        `json:"latency_ms"`
+	ConnectedAt   time.Time                    `json:"connected_at"`
+	LastMessageAt time.Time                    `json:"last_message_at"`
+	Topics        sync.SyncSet[string, string] `json:"-"`
 
 	open      bool
 	conn      net.Conn
@@ -53,6 +55,7 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 		LatencyMS:     time.Now().UnixMilli() - m.SentAt,
 		ConnectedAt:   time.Now(),
 		LastMessageAt: time.Now(),
+		Topics:        sync.NewSyncSet[string, string](),
 		open:          true,
 		conn:          conn,
 		reader:        reader,

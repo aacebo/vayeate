@@ -67,3 +67,13 @@ func (self *SyncSet[K, V]) Next() V {
 	self.mu.RUnlock()
 	return value
 }
+
+func (self *SyncSet[K, V]) ForEach(callback func(i int, v V)) {
+	self.mu.RLock()
+
+	for i, v := range self.iterable {
+		callback(i, v)
+	}
+
+	self.mu.RUnlock()
+}

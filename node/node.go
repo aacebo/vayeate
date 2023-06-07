@@ -90,6 +90,11 @@ func (self *Node) onClientConnection(conn net.Conn) {
 	defer func() {
 		c.Close()
 		self.Clients.Del(c.ID)
+		c.Topics.ForEach(func(_ int, topic string) {
+			if self.Topics.Has(topic) {
+				self.Topics.Get(topic).Subscribers.Del(c.ID)
+			}
+		})
 	}()
 
 	for {
@@ -127,6 +132,7 @@ func (self *Node) onClientConnection(conn net.Conn) {
 			}
 
 			t.Subscribers.Add(c.ID, c)
+			c.Topics.Add(t.Name, t.Name)
 			c.Write(client.NewSubscribeAckMessage())
 		}
 	}
