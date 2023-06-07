@@ -70,6 +70,7 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 func (self *Client) Close() {
 	self.pingTimer.Stop()
 	self.conn.Close()
+	close(self.Messages)
 	self.open = false
 }
 

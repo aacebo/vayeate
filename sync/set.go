@@ -62,7 +62,12 @@ func (self *SyncSet[K, V]) Del(key K) {
 }
 
 func (self *SyncSet[K, V]) Next() V {
-	self.mu.RLock()
+	self.mu.Lock()
+
+	if self.i > len(self.keys)-1 {
+		self.i = 0
+	}
+
 	key := self.keys[self.i]
 	self.i++
 
@@ -70,7 +75,7 @@ func (self *SyncSet[K, V]) Next() V {
 		self.i = 0
 	}
 
-	self.mu.RUnlock()
+	self.mu.Unlock()
 	return self.values[key]
 }
 

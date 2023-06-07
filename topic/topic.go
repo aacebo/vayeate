@@ -35,7 +35,11 @@ func New(name string) *Topic {
 
 			payload := self.Queue.Top()
 			c := self.Subscribers.Next()
-			c.Write(client.NewConsumeMessage(self.Name, payload))
+			err := c.Write(client.NewConsumeMessage(self.Name, payload))
+
+			if err != nil {
+				continue
+			}
 
 			for m := range c.Messages {
 				if m.Code == client.CONSUME_ACK {
