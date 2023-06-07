@@ -29,7 +29,7 @@ func New(name string) *Topic {
 	go func() {
 		for {
 			if self.Subscribers.Len() == 0 || self.Queue.Len() == 0 {
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 
