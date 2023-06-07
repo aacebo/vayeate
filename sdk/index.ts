@@ -14,9 +14,15 @@ import { Client } from './client';
         port: 6789
     })
 
-    await b.subscribe('aacebo.test', m => {
-        console.info(m);
+    await a.subscribe('aacebo.test', _ => {
+        console.info('a');
     });
 
-    await a.publish('aacebo.test', Buffer.from('testing123!'));
+    await b.subscribe('aacebo.test', _ => {
+        console.info('b');
+    });
+
+    for (let i = 0; i < 20; i++) {
+        await a.publish('aacebo.test', Buffer.from('testing123!'));
+    }
 })();

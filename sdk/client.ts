@@ -82,21 +82,12 @@ export class Client {
         return new Promise<void>((resolve, reject) => {
             const m = new Message('publish', { topic, payload });
 
-            this._socket.once('error', reject);
-            this._socket.once('data', buf => {
-                const ack = new Message<'publishAck'>(buf);
-
-                if (ack.type !== 'publishAck') {
-                    return reject(new Error('waiting for publish acknowledgement'));
-                }
-
-                resolve();
-            });
-
             this._socket.write(m.serialize(), err => {
                 if (err) {
                     return reject(err);
                 }
+
+                resolve();
             });
         });
     }
@@ -105,22 +96,13 @@ export class Client {
         return new Promise<void>((resolve, reject) => {
             const m = new Message('subscribe', { topic });
 
-            this._socket.once('error', reject);
-            this._socket.once('data', buf => {
-                const ack = new Message<'subscribeAck'>(buf);
-
-                if (ack.type !== 'subscribeAck') {
-                    return reject(new Error('waiting for subscribe acknowledgement'));
-                }
-
-                this._subscriptions[topic] = cb;
-                resolve();
-            });
-
             this._socket.write(m.serialize(), err => {
                 if (err) {
                     return reject(err);
                 }
+
+                this._subscriptions[topic] = cb;
+                resolve();
             });
         });
     }
