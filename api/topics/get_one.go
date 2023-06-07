@@ -1,7 +1,6 @@
 package topics
 
 import (
-	"fmt"
 	"net/http"
 	"vayeate/node"
 
@@ -12,7 +11,6 @@ import (
 func GetOne(n *node.Node) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := chi.URLParam(r, "topic_name")
-		fmt.Println(name)
 
 		if !n.Topics.Has(name) {
 			render.Status(r, 404)
