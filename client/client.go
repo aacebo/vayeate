@@ -23,6 +23,7 @@ type Client struct {
 	ConnectedAt   time.Time                    `json:"connected_at"`
 	LastMessageAt time.Time                    `json:"last_message_at"`
 	Topics        sync.SyncSet[string, string] `json:"-"`
+	Messages      chan *Message                `json:"-"`
 
 	open      bool
 	conn      net.Conn
@@ -56,6 +57,7 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 		ConnectedAt:   time.Now(),
 		LastMessageAt: time.Now(),
 		Topics:        sync.NewSyncSet[string, string](),
+		Messages:      make(chan *Message),
 		open:          true,
 		conn:          conn,
 		reader:        reader,
@@ -87,6 +89,12 @@ func (self *Client) Read() (*Message, error) {
 	self.LatencyMS = time.Now().UnixMilli() - m.SentAt
 	self.LastMessageAt = time.Now()
 	self.pingTimer.Reset(connectionTimeout)
+
+	select {
+	case self.Messages <- m:
+	default:
+	}
+
 	return m, nil
 }
 

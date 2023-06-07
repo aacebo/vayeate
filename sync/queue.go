@@ -14,6 +14,13 @@ func NewSyncQueue[V any]() SyncQueue[V] {
 	}
 }
 
+func (self *SyncQueue[V]) Top() V {
+	self.mu.RLock()
+	value := self.content[0]
+	self.mu.RUnlock()
+	return value
+}
+
 func (self *SyncQueue[V]) Push(value V) {
 	self.mu.Lock()
 	self.content = append(self.content, value)
