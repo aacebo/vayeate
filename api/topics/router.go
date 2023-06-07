@@ -8,4 +8,5 @@ import (
 
 func NewRouter(r chi.Router, n *node.Node) {
 	r.Get("/topics", Get(n))
+	r.Get("/topics/{topic_name}", GetOne(n))
 }

@@ -8,6 +8,8 @@ import { Client } from './client';
         port: 6789
     }));
 
-    await client.publish('aacebo/test', Buffer.from('testing123!'));
-    await client.subscribe('aacebo/test');
+    await client.publish('aacebo.test', Buffer.from('testing123!'));
+    await client.subscribe('aacebo.test', m => {
+        console.info(m);
+    });
 })();

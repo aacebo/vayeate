@@ -15,6 +15,13 @@ interface MessageTypePayload {
         readonly payload: Buffer;
     };
     readonly publishAck: { };
+    readonly consume: {
+        readonly topic: string;
+        readonly payload: Buffer;
+    };
+    readonly consumeAck: {
+        readonly topic: string;
+    };
     readonly subscribe: {
         readonly topic: string;
     };
@@ -29,10 +36,12 @@ const MESSAGE_TYPE_CODE = {
     connectAck: 2,
     publish: 3,
     publishAck: 4,
-    subscribe: 8,
-    subscribeAck: 9,
-    ping: 12,
-    pingAck: 13
+    consume: 5,
+    consumeAck: 6,
+    subscribe: 7,
+    subscribeAck: 8,
+    ping: 11,
+    pingAck: 12
 };
 
 const CODE_MESSAGE_TYPE = {
@@ -41,10 +50,12 @@ const CODE_MESSAGE_TYPE = {
     2: 'connectAck',
     3: 'publish',
     4: 'publishAck',
-    8: 'subscribe',
-    9: 'subscribeAck',
-    12: 'ping',
-    13: 'pingAck'
+    5: 'consume',
+    6: 'consumeAck',
+    7: 'subscribe',
+    8: 'subscribeAck',
+    11: 'ping',
+    12: 'pingAck'
 };
 
 const MESSAGE_TYPE_TRANSFORM = {
@@ -98,6 +109,28 @@ const MESSAGE_TYPE_TRANSFORM = {
         };
     },
     publishAck: (_: Buffer) => ({ }),
+    consume: (b: Buffer) => {
+        let i = 13;
+        let len = b.readUint32BE(i);
+        const topic = b.subarray(i + 4, i + 4 + len);
+        i = i + 4 + len;
+
+        len = b.readUint32BE(i);
+        const payload = b.subarray(i + 4, i + 4 + len);
+
+        return {
+            topic: topic.toString(),
+            payload
+        };
+    },
+    consumeAck: (b: Buffer) => {
+        const len = b.readUint32BE(13);
+        const value = b.subarray(13 + 4, 13 + 4 + len);
+
+        return {
+            topic: value.toString()
+        };
+    },
     subscribe: (b: Buffer) => {
         const len = b.readUint32BE(13);
         const value = b.subarray(13 + 4, 13 + 4 + len);

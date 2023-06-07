@@ -10,7 +10,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var timeout = 60 * time.Second
+var connectionTimeout = 60 * time.Second
+var readTimeout = 60 * time.Second
+var writeTimeout = 5 * time.Second
 
 type Client struct {
 	ID            string    `json:"id"`
@@ -56,7 +58,7 @@ func FromConnection(username string, password string, conn net.Conn) (*Client, e
 		reader:        reader,
 	}
 
-	self.pingTimer = time.AfterFunc(timeout, self.onConnectionTimeout)
+	self.pingTimer = time.AfterFunc(connectionTimeout, self.onConnectionTimeout)
 	return &self, nil
 }
 
@@ -67,6 +69,8 @@ func (self *Client) Close() {
 }
 
 func (self *Client) Read() (*Message, error) {
+	self.conn.SetReadDeadline(time.Now().Add(readTimeout))
+
 	if !self.open {
 		return nil, io.EOF
 	}
@@ -79,11 +83,12 @@ func (self *Client) Read() (*Message, error) {
 
 	self.LatencyMS = time.Now().UnixMilli() - m.SentAt
 	self.LastMessageAt = time.Now()
-	self.pingTimer.Reset(timeout)
+	self.pingTimer.Reset(connectionTimeout)
 	return m, nil
 }
 
 func (self *Client) Write(m *Message) error {
+	self.conn.SetWriteDeadline(time.Now().Add(writeTimeout))
 	_, err := self.conn.Write(m.Serialize())
 	return err
 }

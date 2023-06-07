@@ -4,6 +4,7 @@ import "sync"
 
 type SyncSet[K comparable, V any] struct {
 	mu       sync.RWMutex
+	i        int
 	mapping  map[K]int
 	iterable []V
 }
@@ -11,6 +12,7 @@ type SyncSet[K comparable, V any] struct {
 func NewSyncSet[K comparable, V any]() SyncSet[K, V] {
 	return SyncSet[K, V]{
 		sync.RWMutex{},
+		0,
 		map[K]int{},
 		[]V{},
 	}
@@ -51,4 +53,17 @@ func (self *SyncSet[K, V]) Del(key K) {
 	delete(self.mapping, key)
 	self.iterable = append(self.iterable[:i], self.iterable[i+1:]...)
 	self.mu.Unlock()
+}
+
+func (self *SyncSet[K, V]) Next() V {
+	self.mu.RLock()
+	value := self.iterable[self.i]
+	self.i++
+
+	if self.i > len(self.iterable)-1 {
+		self.i = 0
+	}
+
+	self.mu.RUnlock()
+	return value
 }

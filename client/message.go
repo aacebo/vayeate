@@ -13,15 +13,14 @@ const (
 	CONNECT_ACK     Code = 2
 	PUBLISH         Code = 3
 	PUBLISH_ACK     Code = 4
-	PUBLISH_REC     Code = 5
-	PUBLISH_REL     Code = 6
-	PUBLISH_COMP    Code = 7
-	SUBSCRIBE       Code = 8
-	SUBSCRIBE_ACK   Code = 9
-	UNSUBSCRIBE     Code = 10
-	UNSUBSCRIBE_ACK Code = 11
-	PING            Code = 12
-	PING_ACK        Code = 13
+	CONSUME         Code = 5
+	CONSUME_ACK     Code = 6
+	SUBSCRIBE       Code = 7
+	SUBSCRIBE_ACK   Code = 8
+	UNSUBSCRIBE     Code = 9
+	UNSUBSCRIBE_ACK Code = 10
+	PING            Code = 11
+	PING_ACK        Code = 12
 )
 
 type Message struct {

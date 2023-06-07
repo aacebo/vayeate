@@ -14,15 +14,15 @@ import (
 )
 
 type Node struct {
-	ID         string `json:"id"`
-	ClientPort int    `json:"client_port"`
-	Username   string `json:"-"`
-	Password   string `json:"-"`
+	ID         string                               `json:"id"`
+	ClientPort int                                  `json:"client_port"`
+	Username   string                               `json:"-"`
+	Password   string                               `json:"-"`
+	Clients    sync.SyncMap[string, *client.Client] `json:"-"`
+	Topics     sync.SyncMap[string, *topic.Topic]   `json:"-"`
 
 	log            *logger.Logger
 	clientListener net.Listener
-	clients        sync.SyncMap[string, *client.Client]
-	topics         sync.SyncMap[string, *topic.Topic]
 }
 
 func New(clientPort string, username string, password string) (*Node, error) {
@@ -44,10 +44,10 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		ClientPort:     cp,
 		Username:       username,
 		Password:       password,
+		Clients:        sync.NewSyncMap[string, *client.Client](),
+		Topics:         sync.NewSyncMap[string, *topic.Topic](),
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
 		clientListener: cl,
-		clients:        sync.NewSyncMap[string, *client.Client](),
-		topics:         sync.NewSyncMap[string, *topic.Topic](),
 	}
 
 	return self, nil
@@ -69,14 +69,6 @@ func (self *Node) Listen() error {
 	}
 }
 
-func (self *Node) GetClients() []*client.Client {
-	return self.clients.Slice()
-}
-
-func (self *Node) GetTopics() []*topic.Topic {
-	return self.topics.Slice()
-}
-
 func (self *Node) onClientConnection(conn net.Conn) {
 	c, err := client.FromConnection(self.Username, self.Password, conn)
 
@@ -86,18 +78,18 @@ func (self *Node) onClientConnection(conn net.Conn) {
 		return
 	}
 
-	if self.clients.Has(c.ID) {
+	if self.Clients.Has(c.ID) {
 		c.Write(client.NewErrorMessage(fmt.Sprintf("client_id `%s` is already is use", c.ID)))
 		c.Close()
 		return
 	}
 
 	c.Write(client.NewConnectAckMessage(c.SessionID))
-	self.clients.Set(c.ID, c)
+	self.Clients.Set(c.ID, c)
 
 	defer func() {
 		c.Close()
-		self.clients.Del(c.ID)
+		self.Clients.Del(c.ID)
 	}()
 
 	for {
@@ -116,22 +108,22 @@ func (self *Node) onClientConnection(conn net.Conn) {
 			c.Write(client.NewPingAckMessage())
 		} else if m.Code == client.PUBLISH {
 			p := m.GetPublishPayload()
-			t := self.topics.Get(p.Topic)
+			t := self.Topics.Get(p.Topic)
 
 			if t == nil {
 				t = topic.New(p.Topic)
-				self.topics.Set(t.Name, t)
+				self.Topics.Set(t.Name, t)
 			}
 
 			t.Queue.Push(p.Payload)
 			c.Write(client.NewPublishAckMessage())
 		} else if m.Code == client.SUBSCRIBE {
 			p := m.GetSubscribePayload()
-			t := self.topics.Get(p.Topic)
+			t := self.Topics.Get(p.Topic)
 
 			if t == nil {
 				t = topic.New(p.Topic)
-				self.topics.Set(t.Name, t)
+				self.Topics.Set(t.Name, t)
 			}
 
 			t.Subscribers.Add(c.ID, c)

@@ -19,6 +19,7 @@ export class Client {
 
     private readonly _socket: net.Socket;
     private _pingTimer?: NodeJS.Timer;
+    private readonly _subscriptions: { [topic: string]: (message: Message<'consume'>) => void } = { };
 
     constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
@@ -100,7 +101,7 @@ export class Client {
         });
     }
 
-    subscribe(topic: string) {
+    subscribe(topic: string, cb: (message: Message<'consume'>) => void) {
         return new Promise<void>((resolve, reject) => {
             const m = new Message('subscribe', { topic });
 
@@ -112,6 +113,7 @@ export class Client {
                     return reject(new Error('waiting for subscribe acknowledgement'));
                 }
 
+                this._subscriptions[topic] = cb;
                 resolve();
             });
 
@@ -131,6 +133,13 @@ export class Client {
     }
 
     private _onData(buf: Buffer) {
-        console.log(new Message(buf));
+        const m = new Message(buf);
+
+        if (m.type == 'consume' && this._subscriptions[(m as Message<'consume'>).payload.topic]) {
+            this._subscriptions[(m as Message<'consume'>).payload.topic](m as Message<'consume'>);
+            this._socket.write(new Message('consumeAck', {
+                topic: (m as Message<'consume'>).payload.topic
+            }).serialize());
+        }
     }
 }
