@@ -1,5 +1,11 @@
 import { Client } from './client';
 
+const sleep = (ms: number) => {
+    return new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 (async () => {
     const a = new Client({ id: 'a' });
     const b = new Client({ id: 'b' });
@@ -28,5 +34,6 @@ import { Client } from './client';
 
     for (let i = 0; i < 15000; i++) {
         await a.publish('aacebo.test', Buffer.from('testing123!'));
+        await sleep(100);
     }
 })();

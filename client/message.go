@@ -37,7 +37,7 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 		return nil, err
 	}
 
-	var sentAt int64
+	var sentAt uint64
 	err = binary.Read(reader, binary.BigEndian, &sentAt)
 
 	if err != nil {
@@ -58,7 +58,7 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 		return nil, err
 	}
 
-	return &Message{code, sentAt, payload}, nil
+	return &Message{code, int64(sentAt), payload}, nil
 }
 
 func (self *Message) Serialize() []byte {

@@ -30,7 +30,7 @@ interface MessageTypePayload {
     readonly pingAck: { };
 }
 
-const MESSAGE_TYPE_CODE = {
+export const MESSAGE_TYPE_CODE = {
     error: 0,
     connect: 1,
     connectAck: 2,
@@ -44,7 +44,7 @@ const MESSAGE_TYPE_CODE = {
     pingAck: 12
 };
 
-const CODE_MESSAGE_TYPE = {
+export const CODE_MESSAGE_TYPE = {
     0: 'error',
     1: 'connect',
     2: 'connectAck',
@@ -58,17 +58,17 @@ const CODE_MESSAGE_TYPE = {
     12: 'pingAck'
 };
 
-const MESSAGE_TYPE_TRANSFORM = {
+export const MESSAGE_TYPE_TRANSFORM = {
     error: (b: Buffer) => {
-        const len = b.readUint32BE(13);
-        const value = b.subarray(13 + 4, 13 + 4 + len);
+        const len = b.readUint32BE();
+        const value = b.subarray(4, 4 + len);
 
         return {
             reason: value.toString()
         };
     },
     connect: (b: Buffer) => {
-        let i = 13;
+        let i = 0;
         let len = b.readUint32BE(i);
         const clientId = b.subarray(i + 4, i + 4 + len);
         i = i + 4 + len;
@@ -87,15 +87,15 @@ const MESSAGE_TYPE_TRANSFORM = {
         };
     },
     connectAck: (b: Buffer) => {
-        const len = b.readUint32BE(13);
-        const value = b.subarray(13 + 4, 13 + 4 + len);
+        const len = b.readUint32BE();
+        const value = b.subarray(4, 4 + len);
         
         return {
             sessionId: value.toString()
         };
     },
     publish: (b: Buffer) => {
-        let i = 13;
+        let i = 0;
         let len = b.readUint32BE(i);
         const topic = b.subarray(i + 4, i + 4 + len);
         i = i + 4 + len;
@@ -110,7 +110,7 @@ const MESSAGE_TYPE_TRANSFORM = {
     },
     publishAck: (_: Buffer) => ({ }),
     consume: (b: Buffer) => {
-        let i = 13;
+        let i = 0;
         let len = b.readUint32BE(i);
         const topic = b.subarray(i + 4, i + 4 + len);
         i = i + 4 + len;
@@ -124,16 +124,16 @@ const MESSAGE_TYPE_TRANSFORM = {
         };
     },
     consumeAck: (b: Buffer) => {
-        const len = b.readUint32BE(13);
-        const value = b.subarray(13 + 4, 13 + 4 + len);
+        const len = b.readUint32BE();
+        const value = b.subarray(4, 4 + len);
 
         return {
             topic: value.toString()
         };
     },
     subscribe: (b: Buffer) => {
-        const len = b.readUint32BE(13);
-        const value = b.subarray(13 + 4, 13 + 4 + len);
+        const len = b.readUint32BE();
+        const value = b.subarray(4, 4 + len);
 
         return {
             topic: value.toString()
@@ -149,19 +149,10 @@ export class Message<T extends keyof MessageTypePayload> {
     readonly sentAt: bigint;
     readonly payload: MessageTypePayload[T];
 
-    constructor(type: T, payload: MessageTypePayload[T])
-    constructor(buf: Buffer)
-    constructor(...args: any[]) {
-        if (args.length === 2) {
-            this.type = args[0];
-            this.sentAt = BigInt(new Date().getTime());
-            this.payload = args[1];
-        } else {
-            const buf: Buffer = args[0];
-            this.type = CODE_MESSAGE_TYPE[buf.at(0)!];
-            this.sentAt = buf.readBigInt64BE(1);
-            this.payload = MESSAGE_TYPE_TRANSFORM[this.type](buf) as any;
-        }
+    constructor(type: T, sentAt: number | bigint, payload: MessageTypePayload[T]) {
+        this.type = type;
+        this.sentAt = BigInt(sentAt);
+        this.payload = payload;
     }
 
     serialize() {
@@ -182,7 +173,7 @@ export class Message<T extends keyof MessageTypePayload> {
         const length = Buffer.from([0, 0, 0, 0]);
         const sentAt = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0]);
         length.writeUInt32BE(payload.length);
-        sentAt.writeBigInt64BE(this.sentAt);
+        sentAt.writeBigUInt64BE(this.sentAt);
 
         return Buffer.concat([
             code,

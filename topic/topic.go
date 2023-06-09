@@ -29,7 +29,7 @@ func New(name string) *Topic {
 	go func() {
 		for {
 			if self.Subscribers.Len() == 0 || self.Queue.Len() == 0 {
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(500 * time.Millisecond)
 				continue
 			}
 
@@ -43,8 +43,12 @@ func New(name string) *Topic {
 
 			for m := range c.Messages {
 				if m.Code == client.CONSUME_ACK {
-					self.Queue.Pop()
-					break
+					p := m.GetConsumeAckPayload()
+
+					if p.Topic == self.Name {
+						self.Queue.Pop()
+						break
+					}
 				}
 			}
 		}
