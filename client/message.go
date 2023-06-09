@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"encoding/binary"
+	"io"
 )
 
 type Code uint8
@@ -52,7 +53,7 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 	}
 
 	payload := make([]byte, length)
-	_, err = reader.Read(payload)
+	_, err = io.ReadFull(reader, payload)
 
 	if err != nil {
 		return nil, err
