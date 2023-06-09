@@ -94,10 +94,6 @@ func (self *Node) onClientConnection(conn net.Conn) {
 			if self.Topics.Has(topic) {
 				t := self.Topics.Get(topic)
 				t.Subscribers.Del(c.ID)
-
-				if t.Subscribers.Len() == 0 && t.Queue.Len() == 0 {
-					self.Topics.Del(topic)
-				}
 			}
 		})
 	}()
