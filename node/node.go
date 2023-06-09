@@ -92,7 +92,12 @@ func (self *Node) onClientConnection(conn net.Conn) {
 		self.Clients.Del(c.ID)
 		c.Topics.ForEach(func(_ int, topic string) {
 			if self.Topics.Has(topic) {
-				self.Topics.Get(topic).Subscribers.Del(c.ID)
+				t := self.Topics.Get(topic)
+				t.Subscribers.Del(c.ID)
+
+				if t.Subscribers.Len() == 0 && t.Queue.Len() == 0 {
+					self.Topics.Del(topic)
+				}
 			}
 		})
 	}()

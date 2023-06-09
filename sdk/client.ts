@@ -21,6 +21,8 @@ export class Client {
     private _pingTimer?: NodeJS.Timer;
     private readonly _subscriptions: { [topic: string]: (message: Message<'consume'>) => void } = { };
 
+    private _buffer = Buffer.from([ ]);
+
     constructor(private readonly _options: ClientOptions) {
         this._socket = new net.Socket();
         this._socket.on('end', this.close.bind(this));
@@ -75,6 +77,7 @@ export class Client {
             return;
         }
 
+        this._socket.removeAllListeners();
         this._socket.destroy();
     }
 
@@ -114,14 +117,37 @@ export class Client {
         }, 30000);
     }
 
-    private _onData(buf: Buffer) {
-        const m = new Message(buf);
+    // private _onData(buf: Buffer) {
+    //     console.info(buf);
+    //     const m = new Message(buf);
 
-        if (m.type == 'consume' && this._subscriptions[(m as Message<'consume'>).payload.topic]) {
-            this._subscriptions[(m as Message<'consume'>).payload.topic](m as Message<'consume'>);
+    //     if (m.type == 'consume' && this._subscriptions[(m as Message<'consume'>).payload.topic]) {
+    //         this._subscriptions[(m as Message<'consume'>).payload.topic](m as Message<'consume'>);
+    //         this._socket.write(new Message('consumeAck', {
+    //             topic: (m as Message<'consume'>).payload.topic
+    //         }).serialize());
+    //     }
+    // }
+
+    private _onData(b: Buffer) {
+        this._buffer = Buffer.concat([this._buffer, b]);
+        let i = 0;
+        let eotIdx = this._buffer.indexOf('\x04');
+
+        // EOT
+        while (eotIdx > -1) {
+            console.log(this._buffer.subarray(i, eotIdx));
+            const m = new Message(this._buffer.subarray(i, eotIdx));
+            i = eotIdx + 1;
+            eotIdx = this._buffer.indexOf('\x04', i);
+
+            console.info(m);
+
             this._socket.write(new Message('consumeAck', {
-                topic: (m as Message<'consume'>).payload.topic
+                topic: 'aacebo.test'
             }).serialize());
         }
+
+        this._buffer = this._buffer.subarray(i);
     }
 }

@@ -152,7 +152,7 @@ export class Message<T extends keyof MessageTypePayload> {
     constructor(type: T, payload: MessageTypePayload[T])
     constructor(buf: Buffer)
     constructor(...args: any[]) {
-        if (args.length == 2) {
+        if (args.length === 2) {
             this.type = args[0];
             this.sentAt = BigInt(new Date().getTime());
             this.payload = args[1];
