@@ -28,5 +28,6 @@ import { Client } from './client';
 
     for (let i = 0; i < 500000; i++) {
         a.publish('aacebo.test', Buffer.from('testing123!'));
+        b.publish('aacebo.test', Buffer.from('hello world!'));
     }
 })();
