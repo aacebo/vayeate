@@ -26,7 +26,7 @@ import { Client } from './client';
         console.info('b', counter);
     });
 
-    for (let i = 0; i < 150000; i++) {
-        await a.publish('aacebo.test', Buffer.from('testing123!'));
+    for (let i = 0; i < 500000; i++) {
+        a.publish('aacebo.test', Buffer.from('testing123!'));
     }
 })();

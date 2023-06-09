@@ -33,7 +33,7 @@ func New(name string) *Topic {
 				continue
 			}
 
-			payload := self.Queue.Top()
+			payload := self.Queue.Pop()
 			c := self.Subscribers.Next()
 			err := c.Write(client.NewConsumeMessage(self.Name, payload))
 
@@ -41,16 +41,16 @@ func New(name string) *Topic {
 				continue
 			}
 
-			for m := range c.Messages {
-				if m.Code == client.CONSUME_ACK {
-					p := m.GetConsumeAckPayload()
+			// for m := range c.Messages {
+			// 	if m.Code == client.CONSUME_ACK {
+			// 		p := m.GetConsumeAckPayload()
 
-					if p.Topic == self.Name {
-						self.Queue.Pop()
-						break
-					}
-				}
-			}
+			// 		if p.Topic == self.Name {
+			// 			self.Queue.Pop()
+			// 			break
+			// 		}
+			// 	}
+			// }
 		}
 	}()
 
