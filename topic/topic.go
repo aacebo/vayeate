@@ -45,9 +45,12 @@ func New(name string) *Topic {
 			}
 
 			payload := self.messages.Pop()
-			self.subscribers.ForEach(func(_ int, c *client.Client) {
-				c.Write(client.NewConsumeMessage(self.Name, payload))
-			})
+
+			go func() {
+				self.subscribers.ForEach(func(_ int, c *client.Client) {
+					c.Write(client.NewConsumeMessage(self.Name, payload))
+				})
+			}()
 		}
 	}()
 
