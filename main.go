@@ -65,5 +65,6 @@ func main() {
 		wg.Done()
 	}()
 
+	log.Infoln("listening...")
 	wg.Wait()
 }
