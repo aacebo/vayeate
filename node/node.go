@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"time"
 	"vayeate/client"
 	"vayeate/logger"
 	"vayeate/sync"
@@ -18,6 +19,7 @@ type Node struct {
 	ClientPort int                                  `json:"client_port"`
 	Username   string                               `json:"-"`
 	Password   string                               `json:"-"`
+	StartedAt  time.Time                            `json:"started_at"`
 	Clients    sync.SyncMap[string, *client.Client] `json:"-"`
 	Topics     sync.SyncMap[string, *topic.Topic]   `json:"-"`
 
@@ -44,6 +46,7 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		ClientPort:     cp,
 		Username:       username,
 		Password:       password,
+		StartedAt:      time.Now(),
 		Clients:        sync.NewSyncMap[string, *client.Client](),
 		Topics:         sync.NewSyncMap[string, *topic.Topic](),
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
