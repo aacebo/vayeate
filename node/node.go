@@ -121,7 +121,7 @@ func (self *Node) onClientConnection(conn net.Conn) {
 				self.Topics.Set(t.Name, t)
 			}
 
-			t.Queue.Push(p.Payload)
+			t.Messages.Push(p.Payload)
 			c.Write(client.NewPublishAckMessage())
 		} else if m.Code == client.SUBSCRIBE {
 			p := m.GetSubscribePayload()

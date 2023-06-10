@@ -10,7 +10,7 @@ import (
 
 func GetOne(n *node.Node) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		name := chi.URLParam(r, "topic_name")
+		name := chi.URLParam(r, "topic")
 
 		if !n.Topics.Has(name) {
 			render.Status(r, 404)
@@ -19,6 +19,11 @@ func GetOne(n *node.Node) http.HandlerFunc {
 		}
 
 		topic := n.Topics.Get(name)
-		render.JSON(w, r, topic)
+		render.JSON(w, r, map[string]interface{}{
+			"name":        topic.Name,
+			"created_at":  topic.CreatedAt,
+			"subscribers": topic.Subscribers.Len(),
+			"messages":    topic.Messages.Len(),
+		})
 	}
 }
