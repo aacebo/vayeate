@@ -1,5 +1,6 @@
 clean:
 	rm -rf ./bin
+	rm -rf ./topics
 
 build:
 	go build -o bin/main main.go

@@ -22,8 +22,8 @@ func GetOne(n *node.Node) http.HandlerFunc {
 		render.JSON(w, r, map[string]interface{}{
 			"name":        topic.Name,
 			"created_at":  topic.CreatedAt,
-			"subscribers": topic.Subscribers.Len(),
-			"messages":    topic.Messages.Len(),
+			"messages":    topic.MessagesLen(),
+			"subscribers": topic.SubscribersLen(),
 		})
 	}
 }

@@ -93,7 +93,7 @@ func (self *Node) onClientConnection(conn net.Conn) {
 		c.Topics.ForEach(func(_ int, topic string) {
 			if self.Topics.Has(topic) {
 				t := self.Topics.Get(topic)
-				t.Subscribers.Del(c.ID)
+				t.UnSubscribe(c)
 			}
 		})
 	}()
@@ -121,7 +121,7 @@ func (self *Node) onClientConnection(conn net.Conn) {
 				self.Topics.Set(t.Name, t)
 			}
 
-			t.Messages.Push(p.Payload)
+			t.Push(p.Payload)
 			c.Write(client.NewPublishAckMessage())
 		} else if m.Code == client.SUBSCRIBE {
 			p := m.GetSubscribePayload()
@@ -132,7 +132,7 @@ func (self *Node) onClientConnection(conn net.Conn) {
 				self.Topics.Set(t.Name, t)
 			}
 
-			t.Subscribers.Add(c.ID, c)
+			t.Subscribe(c)
 			c.Topics.Add(t.Name, t.Name)
 			c.Write(client.NewSubscribeAckMessage())
 		}
