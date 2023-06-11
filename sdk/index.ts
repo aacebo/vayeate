@@ -17,12 +17,12 @@ import { Client } from './client';
     let counter = 0;
 
     a.subscribe('aacebo.test', _ => {
-        counter++
+        counter++;
         console.info('a', counter);
     });
 
     b.subscribe('aacebo.test', _ => {
-        counter++
+        counter++;
         console.info('b', counter);
     });
 
