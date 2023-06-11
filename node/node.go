@@ -15,13 +15,13 @@ import (
 )
 
 type Node struct {
-	ID         string                               `json:"id"`
-	ClientPort int                                  `json:"client_port"`
-	Username   string                               `json:"-"`
-	Password   string                               `json:"-"`
-	StartedAt  time.Time                            `json:"started_at"`
-	Clients    sync.SyncMap[string, *client.Client] `json:"-"`
-	Topics     sync.SyncMap[string, *topic.Topic]   `json:"-"`
+	ID         string                           `json:"id"`
+	ClientPort int                              `json:"client_port"`
+	Username   string                           `json:"-"`
+	Password   string                           `json:"-"`
+	StartedAt  time.Time                        `json:"started_at"`
+	Clients    sync.Map[string, *client.Client] `json:"-"`
+	Topics     sync.Map[string, *topic.Topic]   `json:"-"`
 
 	log            *logger.Logger
 	clientListener net.Listener
@@ -47,8 +47,8 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		Username:       username,
 		Password:       password,
 		StartedAt:      time.Now(),
-		Clients:        sync.NewSyncMap[string, *client.Client](),
-		Topics:         sync.NewSyncMap[string, *topic.Topic](),
+		Clients:        sync.NewMap[string, *client.Client](),
+		Topics:         sync.NewMap[string, *topic.Topic](),
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
 		clientListener: cl,
 	}

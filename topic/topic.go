@@ -15,8 +15,8 @@ type Topic struct {
 
 	log         *logger.Logger
 	file        *os.File
-	messages    sync.SyncQueue[[]byte]
-	subscribers sync.SyncSet[string, *client.Client]
+	messages    sync.Queue[[]byte]
+	subscribers sync.Set[string, *client.Client]
 }
 
 func New(name string) *Topic {
@@ -33,8 +33,8 @@ func New(name string) *Topic {
 		CreatedAt:   time.Now(),
 		log:         logger.New(fmt.Sprintf("vayeate:topic:%s", name)),
 		file:        file,
-		messages:    sync.NewSyncQueue[[]byte](),
-		subscribers: sync.NewSyncSet[string, *client.Client](),
+		messages:    sync.NewQueue[[]byte](),
+		subscribers: sync.NewSet[string, *client.Client](),
 	}
 
 	go func() {

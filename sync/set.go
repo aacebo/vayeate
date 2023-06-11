@@ -2,15 +2,15 @@ package sync
 
 import "sync"
 
-type SyncSet[K comparable, V any] struct {
+type Set[K comparable, V any] struct {
 	mu     sync.RWMutex
 	i      int
 	keys   []K
 	values map[K]V
 }
 
-func NewSyncSet[K comparable, V any]() SyncSet[K, V] {
-	return SyncSet[K, V]{
+func NewSet[K comparable, V any]() Set[K, V] {
+	return Set[K, V]{
 		sync.RWMutex{},
 		0,
 		[]K{},
@@ -18,21 +18,21 @@ func NewSyncSet[K comparable, V any]() SyncSet[K, V] {
 	}
 }
 
-func (self *SyncSet[K, V]) Has(key K) bool {
+func (self *Set[K, V]) Has(key K) bool {
 	self.mu.RLock()
 	_, ok := self.values[key]
 	self.mu.RUnlock()
 	return ok
 }
 
-func (self *SyncSet[K, V]) Len() int {
+func (self *Set[K, V]) Len() int {
 	self.mu.RLock()
 	l := len(self.keys)
 	self.mu.RUnlock()
 	return l
 }
 
-func (self *SyncSet[K, V]) Add(key K, value V) {
+func (self *Set[K, V]) Add(key K, value V) {
 	if self.Has(key) {
 		return
 	}
@@ -43,7 +43,7 @@ func (self *SyncSet[K, V]) Add(key K, value V) {
 	self.mu.Unlock()
 }
 
-func (self *SyncSet[K, V]) Del(key K) {
+func (self *Set[K, V]) Del(key K) {
 	if !self.Has(key) {
 		return
 	}
@@ -61,7 +61,7 @@ func (self *SyncSet[K, V]) Del(key K) {
 	self.mu.Unlock()
 }
 
-func (self *SyncSet[K, V]) Next() V {
+func (self *Set[K, V]) Next() V {
 	self.mu.Lock()
 
 	if self.i > len(self.keys)-1 {
@@ -79,7 +79,7 @@ func (self *SyncSet[K, V]) Next() V {
 	return self.values[key]
 }
 
-func (self *SyncSet[K, V]) ForEach(callback func(i int, v V)) {
+func (self *Set[K, V]) ForEach(callback func(i int, v V)) {
 	self.mu.RLock()
 
 	for i, key := range self.keys {
