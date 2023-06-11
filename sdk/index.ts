@@ -16,12 +16,12 @@ import { Client } from './client';
 
     let counter = 0;
 
-    await a.subscribe('aacebo.test', _ => {
+    a.subscribe('aacebo.test', _ => {
         counter++
         console.info('a', counter);
     });
 
-    await b.subscribe('aacebo.test', _ => {
+    b.subscribe('aacebo.test', _ => {
         counter++
         console.info('b', counter);
     });
