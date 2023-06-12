@@ -41,7 +41,7 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		return nil, err
 	}
 
-	self := &Node{
+	return &Node{
 		ID:             id,
 		ClientPort:     cp,
 		Username:       username,
@@ -51,9 +51,7 @@ func New(clientPort string, username string, password string) (*Node, error) {
 		Topics:         sync.NewMap[string, *topic.Topic](),
 		log:            logger.New(fmt.Sprintf("vayeate:node:%s", id)),
 		clientListener: cl,
-	}
-
-	return self, nil
+	}, nil
 }
 
 func (self *Node) Close() {
